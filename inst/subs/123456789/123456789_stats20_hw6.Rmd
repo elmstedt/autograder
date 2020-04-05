@@ -1,0 +1,257 @@
+---
+title: "Stats 20, 20W -- Homework 6"
+author: "First Student -- 123456789"
+date: "3/5/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Question 1
+
+### (a)
+
+Write a function called **reading_ease( )** that will compute the Flesch reading ease score for an input text passage. The Flesch reading ease formula and rules for counting sentences, words, and syllables must adhere to the descriptions given in Section 5 of tne Chapter S notes.
+
+Your function should be able to compute the reading ease score for an entire text passage if it is inputted as a single character value (i.e., all sentences in a single string) or as a character vector (i.e., sentences may be split into separate strings).
+
+*Hint 1*: You may use any and all code (particularly the helper functions) provided in the Chapter S notes to help in writing your **reading_ease( )** function.
+
+*Hint 2*: The **collapse** argument in the **paste( )** function may be useful to accommodate character vectors of length greater than 1.
+
+**Answer:**
+
+```{r reading_ease( ) function}
+reading_ease <- function(passage) {
+  if (!is.character(passage)) {
+    stop("Input must be a single string or character vector.")
+  }
+  if (length(passage) > 1) {
+    passage <- paste(passage, sep = " ", collapse = " ")
+  }
+  passage_sentences <- strsplit(passage, split = "[.!?:;]")[[1]]
+  passage_sentences <- tolower(passage_sentences)
+  passage_sentences <- gsub(pattern = "[[:punct:]]", replacement = "",
+                            passage_sentences)
+  passage_words <- strsplit(passage_sentences, split = " ")
+  keep_words <- function(words) {
+    words[nchar(words) > 0]
+  }
+  passage_words <- lapply(passage_words, keep_words)
+  avg_sentence_length <- mean(vapply(passage_words, length, numeric(1)))
+  count_syllables <- function(word) {
+    is_special_ending <- function(ending) {
+      is_es <- all(ending == c("e", "s"))
+      is_ed <- all(ending == c("e", "d"))
+      is_e_not_le <- ending[2] == "e" & ending[1] != "l"
+      is_es | is_ed | is_e_not_le
+  }
+    rm_special_endings <- function(word_letters) {
+      word_tail <- tail(word_letters, n = 2)
+      if (is_special_ending(word_tail)) {
+        if (word_tail[2] == "e") {
+          word_letters[-length(word_letters)]
+        } else {
+          head(word_letters, n = -2)
+        }
+      } else {
+        word_letters
+      }
+    }
+    is_vowel <- function(letter) {
+      letter %in% c("a", "e", "i", "o", "u", "y")
+    }
+    word_letters <- unlist(strsplit(word, split = ""))
+    if (length(word_letters) <= 3) {
+      1
+    } else {
+      word_letters <- rm_special_endings(word_letters)
+      word_vowels <- is_vowel(word_letters)
+      sum(word_vowels) - sum(diff(which(word_vowels)) == 1) # v_num - consec_v
+    }
+  }
+  syllable_total <- sum(vapply(passage_words, count_syllables, numeric(1))) - 2
+  word_total <- sum(vapply(passage_words, length, numeric(1)))
+  avg_syllable_per_word <- syllable_total / word_total
+  206.835 - (1.015 * avg_sentence_length) - (84.6 * avg_syllable_per_word)
+}
+```
+
+## (b)
+
+Verify that your **reading_ease( )** function from (a) works on the **waffles** passage from the Chapter S notes (you may source the **waffles.R** in your Rmd file). Verify that you compute the same Flesch reading ease score for the following vector:
+
+```{r waffles_vec reading_ease( ) test}
+waffles_vec <-
+  c("We need to remember what's important in life: friends, waffles, work.",
+    "Or waffles, friends, work.",
+    "Doesn't matter, but work is third.")
+```
+
+**Note**: Code should *never* be  opy-pasted from PDFs. Certain characters become non-standard characters when embedded into a PDF. To make sure you and the grader have no issues when knitting your .Rmd file, you should *always* retype code provided in PDFs.
+
+**Answer:**
+
+```{r testing reading_ease( ) function}
+source("waffles.R")
+reading_ease(waffles)
+reading_ease(waffles_vec)
+```
+
+As shown above, `reading_ease(waffles) == reading_ease(waffles_vec)` is `r reading_ease(waffles) == reading_ease(waffles_vec)`.
+
+*Note*: The style checker tool recommends against using source() but I included it in the code chunk above because the question states that "you may source the **waffles.R** in your Rmd file".
+
+## Question 2
+
+Write a function called **my_nchar( )** that inputs a vector **x** and outputs the number of characters contained in each entry of the vector without the **nchar( )** function. The output of **my_nchar(x)** and **nchar(x)** should be identical for any character vector **x**.
+
+**Answer:**
+
+```{r my_nchar( ) function}
+my_nchar <- function(x) {
+  x <- strsplit(x, split = ", ")
+  for (i in seq_along(x)) {
+    x[[i]] <- length(unlist(strsplit(x[[i]], split = "")))
+  }
+  unlist(x)
+}
+```
+
+# Question 3
+
+Write a function called **my_strrep( )** that inputs a vector **x** and an integer vector **times** that repeats the entries of **x** a given number of times without the **strrep( )** function. The entries of the **times** argument specify the number of times to repeat the corresponding entries of **x**, recycling as necessary. The output of **my_strrep(x, times)** and **strrep(x, times)** should be identical for any character vector **x** and integer vector **times**.
+
+**Answer:**
+
+```{r my_strrep( ) function}
+my_strrep <- function(x, times) {
+  x <- as.character(x)
+  repeated_x <- character(0)
+  for (i in seq_along(x)) {
+    x[i] <- paste(rep(x[i], each = times), collapse = "")
+    repeated_x <- c(repeated_x, x[i])
+  }
+  paste(repeated_x, sep = " ")
+}
+```
+
+## Question 4
+
+Without the **%in%** operator, write an inflix operator called **%is_in%** that inputs a vector **x** on the left and a vector **table** on the right and returns one logical value for each element in **x** representing if there exists an element in the **table** vector with that same value. The output of **x %is_in% table** and **x %in% table** should be identical for any vectors **x** and **table**.
+
+**Answer:**
+
+```{r %is_in% operator}
+`%is_in%` <- function(x, table) {
+  for (i in seq_along(x)) {
+        if (any(is.na(table))) {
+      table <- table[!is.na(table)]
+    }
+    if (is.na(x[i])) {
+      x[i] <- any(is.na(table))
+    } else {
+      x[i] <- any(x[i] == table)
+    }
+  }
+  as.logical(x)
+}
+```
+
+## Question 5
+
+Without the **regexpr( )** and **gregexpr( )** functions, write a function called **my_gregexpr( )** that inputs a character string **pattern** and a character vector **text** and returns a list of the same length as **text**, each component of which is an integer vector giving the starting positions of every (disjoint) match of **pattern** in the corresponding entry in **text** or **-1** if there is no match. The output values from **my_gregexpr(pattern, text)** and **gregexpr(patttern, text)** should be identical for any character string **pattern** and character vector **text**.
+
+**Note**: You do not need to add attributes to each component of the output list of **my_gregexpr( )** to match **gregexpr( )**. This will mean **identical(my_gregexpr(pattern, text), gregexpr(pattern, text))** will always return **FALSE**.
+
+**Answer:**
+
+```{r my_gregexpr( ) function}
+my_gregexpr <- function(pattern, text) {
+  text_single_symbols <- strsplit(text, split = "")
+  pattern_matches <- list()[seq_along(text)]
+  for (i in seq_along(pattern)) {
+    for (j in seq_along(text)) {
+      if (pattern[i] %in% unlist(text_single_symbols[[j]])) {
+        pattern_matches[[j]] <- c(pattern_matches[[j]],
+                                  grep(pattern[i], text_single_symbols[[j]]))
+      } else {
+        pattern_matches[[j]] <- c(pattern_matches[[j]], -1)
+      }
+    }
+  }
+  pattern_matches
+}
+```
+
+## Question 6
+
+### (a) 
+
+While **gsub( )** is a wonderful function, it has many limitations. Most notanbly, the **gsub( )** function is not vectorized over patterns *or* replacement strings. 
+
+Read through the following description:
+
+```
+FUNCTION:   pargsub( )
+INPUTS:     text, a length-1 character vector.
+            patterns, a character vector of string patterns to be replaced.
+            replacements, a list of the same length as the patterns vector.
+              Each element of replacements is a character vector of at least length-1.
+OUTPUTS:    The input text with each instance of each pattern replaced by the corresponding 
+            element of the corresponding replacement vector. If there are more instances of 
+            a particular pattern than elements in that pattern's replacement vector, the 
+            replacement vector will be recycled.
+```
+
+Using the provided description, write the **pargsub( )** function.
+
+*Hint 1*: Try to avoid loops in favor of vectorized functions.
+
+*Hint 2*: It may be helpful to use your **my_gregexpr( )** function in your definition of **pargsub( )**.
+
+**Answer:**
+
+Though both *Hint 1* as well as Jake on Campuswire recommended against using loops, I was unable to create an adequate solution (with vectorized functions) before the deadline. 
+
+```{r pargsub( ) function}
+pargsub <- function(text, patterns, replacements) {
+  new_text <- character(1)
+  for (i in seq_along(patterns)) {
+    for (j in seq_along(replacements)) {
+      new_text <- gsub(patterns[i], replacements[[j]], text)
+    }
+  }
+  new_text
+}
+```
+
+### (b)
+
+Load the contents of the **madlib.RData** file into your workspace and use your **pargsub( )** function to fill out the madlib object **text**.
+
+In order to randomize the selection of words, you will need two functions:
+
+1. **sample( )**: This will be used to generate a (psuedo)random sample from a vector.
+
+2. **set.seed( )**: This function is required in order to make your work *reproducible*. If you set the system random seed to a value before doing something "random" you can get the same "random" result again by setting your seed to the same value again.
+
+Try setting a few different random seeds and randomizing the elements of each of the vectors in the **replacements** list you pass to your   
+**pargsub( )** function until you get a madlib you think is funny. Include the seed and your completed madlib in your file.
+
+**Answer:**
+
+```{r madlib from pargsub( ) function}
+load("madlib.RData")
+set.seed(1359)
+pargsub(text, patterns, list(sample(nouns, 1),
+                             sample(verbs, 1),
+                             sample(adjectives, 1),
+                             sample(body_parts, 1),
+                             sample(numbers, 1)))
+```
+
+
+

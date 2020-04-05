@@ -1,0 +1,284 @@
+---
+title: "Stats 20, 20w - Homework 6"
+author: "Second Student - 987654321"
+date: "March 5, 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Question 1
+
+### (a)
+
+I write a function will compute the Flesch reading ease score for an input text passage. \
+The first step is making sure the text we work on is of length 1: to do this I paste the inputted text using the collapse argument. \
+I then use the helper functions from chapter S to find sentences, words and syllables in the text. \
+I then compute the Flesch reading ease score using the formula provided in chapter S,
+```{r}
+reading_ease <- function(text) {
+  text <- paste(text, collapse = " ")
+  sentences <- tolower(strsplit(text, split = "[.!?:;]")[[1]])
+  sentences <- gsub(pattern = "[[:punct:]]", replacement = "", sentences)
+  keep_words <- function(words) {
+    words[nchar(words) > 0]
+  }
+  words <- lapply(strsplit(sentences, split = " "), keep_words)
+  asl <- length(unlist(words)) / length(words)
+  separate_words <- unlist(words)
+  is_special_ending <- function(ending) {
+    is_es <- all(ending == c("e", "s"))
+    is_ed <- all(ending == c("e", "d"))
+    is_e_not_le <- ending[2] == "e" & ending[1] != "l"
+    is_es | is_ed | is_e_not_le
+  }
+  rm_special_endings <- function(letters) {
+    word_tail <- tail(letters, n = 2)
+    if (is_special_ending(word_tail)) {
+      if (word_tail[2] == "e") {
+        letters[-length(letters)]
+      } else {
+        head(letters, n = -2)
+      }
+    } else {
+      letters
+    }
+  }
+  is_vowel <- function(letters) {
+    letters %in% c("a", "e", "i", "o", "u", "y")
+  }
+  count_syllables <- function(word) {
+    word_letters <- unlist(strsplit(word, split = ""))
+    if (length(word_letters) <= 3) {
+      1
+    } else {
+      word_letters <- rm_special_endings(word_letters)
+      word_vowels <- is_vowel(word_letters)
+      sum(word_vowels) - sum(diff(which(word_vowels)) == 1)
+    }
+  }
+  syllables <- vapply(separate_words, count_syllables, numeric(1))
+  awl <- sum(syllables) / length(separate_words)
+  206.835 - (1.015 *  asl) - (84.6 * awl)
+}
+```
+
+### (b)
+
+We can now test our reading_ease() function on the waffles passage
+```{r}
+source("waffles.R")
+reading_ease(waffles)
+```
+We get that the Flesch reading ease score is `r reading_ease(waffles)`. \
+We now check if it is equal to the reading score of the vector provided:
+```{r}
+waffles_vec <- c("We need to remember what's important in life:
+                 friends, waffles, work.",
+                 "Or waffles, friends work.",
+                 "Doesn't matter, but work is third")
+reading_ease(waffles_vec)
+```
+The Flesch reading ease score is `r reading_ease(waffles_vec)`. The two values obtained are identical: the function works.
+
+## Question 2
+
+Here I write a function than inputs a character vector and outputs the number of characters contained in each entry of the vector without the nchar() function. \
+To do this, my function first covers the edge case that the input string is empty. \
+If it is not, I split each component of the string into the characters that form it and then compute the length of each of these splitted components. \
+The results of nchar() and my_nchar() are the same for any character vector.
+```{r}
+my_nchar <- function(string) {
+  if (length(string) == 0) {
+    integer(0)
+  } else {
+    if (length(string) == 1 && (is.na(string) & !is.nan(string))) {
+      NA
+    } else {
+      if (length(string) == 1 && is.nan(string)) {
+        3
+      } else {
+      if (any(is.na(string))) {
+        cleaned_string <- string[!is.na(string)]
+        nas_removed <- which(is.na(string))
+        not_nas <- which(!is.na(string))
+        nchar_results <- vapply(cleaned_string, function(x) {
+                      characters <- unlist(strsplit(x, split = ""))
+                      length(characters)
+                      }, integer(1), USE.NAMES = FALSE)
+        result <- integer(length(string))
+        result[nas_removed] <- rep(NA, length(nas_removed))
+        result[not_nas] <- nchar_results
+        result
+      } else {
+        result <- vapply(string, function(x) {
+        characters <- unlist(strsplit(x, split = ""))
+        length(characters)
+        }, integer(1), USE.NAMES = FALSE)
+        result
+        }
+      }
+    }
+  }
+}
+```
+
+## Question 3
+
+I write a function that inputs a character vector x and an integer vector times that repeats the entries of x a given number of times. My function should output an identical result as the strrep() function. \
+First, my function checks if the times argument is zero, and in that case, returns an emoty string.\
+Second, I check if the input string is empty and, if so, return character(0). \
+Now, that the edge cases are covered: my functions does the recyling it needs to make sure that the string vector and the times vector have the same length. \
+Now my function can do the repeting: I repeat each element in string by the amount specified by times and then collpase the resulting vector using the paste() function with the collapse argument equal to the empty string. \
+The results of strrep() and my_strrep() are the same for any character vector.
+```{r}
+my_strrep <- function(string, times) {
+  if (sum(times) == 0) {
+    rep("", times = length(string))
+  } else {
+    if (length(string) == 0) {
+      character(0)
+    } else {
+     if (length(string) >= length(times)) {
+      times <- rep(times, times = length(string) %/% length(times) + 1)
+      times <- times[seq_along(string)]
+    } else {
+      string <- rep(string, times = length(times) %/% length(string) + 1)
+      string <- string[seq_along(times)]
+    }
+     result <- vapply(seq_along(string), function(x) {
+          paste(rep(string[x], times = times[x]), collapse = "")
+          },
+          character(1), USE.NAMES = FALSE)
+     if (any(is.na(string))) {
+       result[is.na(string)] <- rep(NA, sum(is.na(string)))
+     }
+     result
+      }
+  }
+}
+```
+
+
+## Question 4
+
+I write an infix operator called %is_in% that inputs a vector x on the left and a vector table on the right and returns one logical value for each element in x representing if there exists an element in the table vector with that same value. \
+To do this, I first deal with recycling of the table vector: it needs to be at least of the same length as x. \
+I then check for each element of x, whether there is an element in table that is equal to that element in x, returning TRUE if the search is successful. \
+My operator %is_in% returns the same results as the operator %in%.
+```{r}
+`%is_in%` <- function(x, table) {
+  if (length(table) < length(x)) {
+  table <- rep(table, times = length(x) %/% length(table) + 1)
+  table <- table[seq_along(x)]
+  }
+  result <- vapply(x, function(x) {
+   any(table == x)
+  },
+  logical(1), USE.NAMES = FALSE)
+  if (any(is.na(x))) {
+    if (any(is.na(table))) {
+      result[is.na(x)] <- rep(TRUE, sum(is.na(x)))
+    } else {
+      result[is.na(x)] <- rep(FALSE, sum(is.na(x)))
+    }
+  }
+  result
+}
+```
+
+
+## Question 5
+
+I write a function called my_gregexpr() that inputs a character string pattern and a character vector text and returns a list of the same length as text, each component of which is an integer vector giving the starting positions of every (disjoint) match of pattern in the corresponding entry in text or -1 if there is no match. \
+To do this, I first check whether the pattern argument is valid, if it is an empty string, my function throws an error. \
+Then, I create e list of the same length as text that will act as my result. I then check in each component of the text if there is the pattern I am looking for. In the positive cases, I count the number of times my pattern is found there and where my patterns are found. In order to achieve this, I have to split the words where I found the pattern according to the pattern and then counting the characters in this splitted vector. \
+In case my pattern was find somewhere in the text, my function returns the locations where they were found and in case they were not, my function returns -1.
+```{r}
+my_gregexpr <- function(pattern, text) {
+  if (length(pattern) == 0) {
+    stop("invalid 'pattern' argument")
+  }
+  result <- list()
+  length(result) <- length(text)
+  findings <- vapply(text, function(x) {
+  grepl(pattern = pattern, x)}, logical(1))
+  locations <- list()
+  i <- 1
+  for (word in text[findings]) {
+    splitted_word <- unlist(strsplit(word, split = pattern))
+    number_of_removals <- (nchar(word) - sum(nchar(splitted_word))) /
+                            nchar(pattern)
+    location_of_pattern <- cumsum(nchar(splitted_word)) +
+                            (seq_along(splitted_word) - 1) * nchar(pattern) + 1
+    location_of_pattern <- location_of_pattern[seq_len(number_of_removals)]
+    locations[[i]] <- location_of_pattern
+     i <- i + 1
+  }
+ result[findings] <- locations
+ result[!findings] <- -1
+ result
+}
+```
+
+## Question 6
+
+### (a)
+
+I write a function called pargsub() that finds character values specified by the patterns vector inside a character vector called text and then replaces each of these with the elements specified by a replacements vector. \
+My function finds the patterns in text using the my_gregexpr() function. To do this, I must use the function sapply() since it is impossible to predict the result for the function I am applying on each component of the patterns vector. \
+I then recylce the elements in replacements to make sure there are enough replacements for the replacements to be made. \
+I then split the text vector to be separated by words and then find the locations where to place each replacement. \
+Finally, I do the replacement and recollapse the text to be of length 1.
+```{r}
+pargsub <- function(text, patterns, replacements) {
+  to_replace <- sapply(patterns, function(x) {
+                      my_gregexpr(pattern = x, text = text)
+                })
+  for (i in seq_along(replacements)) {
+    replacements[[i]] <- rep(replacements[[i]],
+                             times = length(to_replace[[i]]) %/%
+                               length(replacements[[i]]) + 1)
+    replacements[[i]] <- replacements[[i]][seq_along(to_replace[[i]])]
+  }
+  splitted_text <- unlist(strsplit(text, split = " "))
+  locations_of_patterns <- sapply(patterns, function(x) {
+                            grepl(pattern = x, splitted_text)
+                            })
+  for (c in seq_len(ncol(locations_of_patterns))) {
+    finding <- strsplit(splitted_text[locations_of_patterns[, c]],
+                        split = (colnames(locations_of_patterns)[c]))
+    finding <- lapply(seq_along(finding), function(x) {
+      finding[[x]][1] <- replacements[[c]][x]
+      finding[[x]]
+    })
+    replaced_finding <- vapply(finding, function(x) {
+      paste(x, collapse = "")
+    }, character(1))
+    splitted_text[locations_of_patterns[, c]] <- replaced_finding
+  }
+  paste(splitted_text, collapse = " ")
+}
+```
+
+### (b)
+
+I know load the contents of the madlib.RData file into my workspace and use my pargsub() function to fill out the madlib object text.
+```{r}
+load("madlib.RData")
+```
+
+I create the replacement list using the vectors I loaded, after having randomized them. I then use this replacement list to fill out the text object and create a madlib.
+```{r}
+set.seed(3)
+adj <- sample(adjectives)
+bp <- sample(body_parts)
+noun <- sample(nouns)
+number <- sample(numbers)
+verb <- sample(verbs)
+replacements <- list(noun, verb, adj, bp, number)
+pargsub(text = text, patterns = patterns, replacements = replacements)
+```
+I think my object is funny!
