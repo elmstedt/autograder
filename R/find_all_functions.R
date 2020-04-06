@@ -8,7 +8,7 @@
 #' @export
 #'
 #' @examples
-find_all_functions <- function(hw_dir, exclude = NULL, flist = NULL) {
+find_all_functions <- function(hw_dir, exclude = NULL, flist = NULL, combine = FALSE) {
   bids <- dir(hw_dir)
   rmds <- dir(hw_dir, pattern = "Rmd$", full.names = TRUE, recursive = TRUE, ignore.case = TRUE)
   bid <- bids[1]
@@ -54,18 +54,20 @@ find_all_functions <- function(hw_dir, exclude = NULL, flist = NULL) {
     names(b) <- flist
     b
   }
-  exclude <- NULL
-  flist <- NULL
+  # exclude <- NULL
+  # flist <- NULL
   res <- sapply(bids, process_one, exclude = exclude, flist = flist)
   # out <- sort(table(Reduce("c", res)))
-  all_fn_names <- Reduce("union", sapply(res, names))
-  q <- lapply(all_fn_names,
-              function(fn) {
-                sort(table(Reduce(`c`, sapply(res, function(s, fn) {
-                  s[fn]
-                }, fn))))
-              })
-  names(q) <- all_fn_names
-  q
+
+
+  if (combine) {
+    table(Reduce(`c`,apply(res, 2, function(r) {
+      unique(Reduce(`c`, r))
+    })))
+  } else {
+    apply(res, 1, function(r){
+      table(Reduce(`c`, sapply(r, unique)))
+    })
+  }
 }
 
