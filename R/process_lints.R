@@ -71,6 +71,7 @@ process_lints <- function(x) {
     unique()
   s <- s[order(s$family),]
   dup_idx <- duplicated(s$family)
+  class(s$score) <- "character"
   s[dup_idx, c("family", "score")] <- ""
   s
 }

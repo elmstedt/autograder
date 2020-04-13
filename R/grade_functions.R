@@ -112,8 +112,12 @@ process_student_auto <- function(bid, rmds, auto_fun, auto_rub_fun, allowed_fun,
       },
       error = function(e){
         dbg("\nUID: ", bid, "\nError encountered: ", e)
-        dbg("\nsres: ", typeof(sres), "\n", sres)
-        dbg("\nmres: ", typeof(mres), "\n", mres)
+        if (exists("sres")) {
+          dbg("\nsres: ", typeof(sres), "\n", sres)
+        }
+        if (exists("mres")) {
+          dbg("\nmres: ", typeof(mres), "\n", mres)
+        }
         list(FALSE, feedback)
       }
     )
