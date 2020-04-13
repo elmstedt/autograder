@@ -1,6 +1,12 @@
 dbg <- function(...) {
   if (parent.frame(7)$debug) {
+    zz <- file("debug.log", open = "a+")
+    sink(zz, append = TRUE)
+    sink(zz, type = "message", append = TRUE)
     message(...)
+    sink(type = "message")
+    sink()
+    closeAllConnections()
   }
 }
 
