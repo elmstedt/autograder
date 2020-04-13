@@ -21,8 +21,9 @@ compile_grades <- function(reader_file = "grader.csv",
                            model_solution_file = "model_solutions.Rmd",
                            support_dir = "support_files",
                            allowed_functions_file = "allowed_functions.csv",
-                           check_style = TRUE,
-                           check_formals = FALSE
+                           grade_style = TRUE,
+                           check_formals = FALSE,
+                           debug = FALSE
 ) {
   message("Reading in rubric files...")
   rubric <- suppressMessages(read_csv(rubric_file,
@@ -36,7 +37,7 @@ compile_grades <- function(reader_file = "grader.csv",
 
   auto_rub_fun <- rubric[rubric$type == "auto_fun", ]
   message("Copying support files...")
-  file.copy(support_dir, getwd(), recursive = TRUE)
+  suppressWarnings(file.copy(support_dir, getwd(), recursive = TRUE))
   rmds <- dir("subs", pattern = "Rmd$", recursive = TRUE, ignore.case = TRUE, full.names = TRUE)
   bids <- get_bid(rmds)
 
@@ -54,14 +55,15 @@ compile_grades <- function(reader_file = "grader.csv",
                                 bids = bids,
                                 rmds = rmds,
                                 allowed_fun = allowed_fun,
-                                check_formals = check_formals)
+                                check_formals = check_formals,
+                                debug = debug)
 
   # message("Average homework grade", mean(graded_fun$score))
   # grade regex
 
   # auto_regex <- read_csv("rubric_auto_regex.csv")
   message("Grading student answers...")
-  regex_rub <- read_csv(regex_rubric_file)
+  regex_rub <- suppressMessages(read_csv(regex_rubric_file))
   if (nrow(regex_rub) > 0) {
     graded_regex <- grade_regex(regex_rubric_file, bids)
   } else {
@@ -69,7 +71,7 @@ compile_grades <- function(reader_file = "grader.csv",
   }
 
   # grade style
-  if (check_style) {
+  if (!isFALSE(grade_style)) {
     message("Grading student style...")
     style_grades <- pblapply(bids, grade_all_style, rmds, make_my_lintrs(), make_stats_20_lintrs())
     style_grades <- Reduce("rbind", style_grades)
@@ -107,7 +109,10 @@ compile_grades <- function(reader_file = "grader.csv",
     grader$subpart <- NA_character_
   }
 
-  grader <- inner_join(grader,rubric[rubric$type == "reader", c("question", "part", "subpart", "points")])
+  grader <- suppressMessages(inner_join(grader,
+                       rubric[rubric$type == "reader",
+                              c("question", "part", "subpart", "points")],
+                       by = "bid"))
   grader$possible <- grader$points
   # reorder grader columns to match other files
   grader <- grader[names(auto_res)]
@@ -160,11 +165,15 @@ compile_grades <- function(reader_file = "grader.csv",
   style_grades$style_table <- gsub("\\n", "<br/>", style_grades$style_table)
 
   # todo: include late penalty calculation
-  grading_results <- inner_join(df_grade, style_grades)
+  grading_results <- inner_join(df_grade, style_grades, by = "bid")
   grading_results <- grading_results %>%
     group_by(bid) %>%
-    summarise(grade = scoring_function(grade) + style_score, feedback = paste(grading_table, style_table))
+    summarise(grade = scoring_function(grade) + ifelse(identical(grade_style, 0),
+                                                       0,
+                                                       style_score),
+              feedback = paste(grading_table, style_table))
   grading_results$feedback <- gsub(pattern = "(<br/>)+", replacement = "<br/>", grading_results$feedback)
   write_csv(grading_results, results_file)
+  message("Finished grading. The grading results are in the file:\n", normalizePath(file.path(".", results_file)))
   grading_results
 }

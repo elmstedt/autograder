@@ -10,7 +10,7 @@
 #' @export
 #'
 #' @examples
-process_student_auto <- function(bid, rmds, auto_fun, auto_rub_fun, allowed_fun, my, check_formals = FALSE) {
+process_student_auto <- function(bid, rmds, auto_fun, auto_rub_fun, allowed_fun, my, check_formals = FALSE, debug = FALSE) {
   # message(bid)
   this_student <- suppressMessages(inner_join(auto_fun, auto_rub_fun))
   rmd <- rmds[grepl(bid, rmds)]
@@ -102,13 +102,18 @@ process_student_auto <- function(bid, rmds, auto_fun, auto_rub_fun, allowed_fun,
         mres <- round(mres, 6)
       }
       pass <- close_enough(mres, sres, 1e-6) ||
-        (isTRUE(all(sres == mres)) && identical(length(sres), length(mres))) ||
         isTRUE(identical(sres, mres)) ||
-        isTRUE(identical(as(mres, class(sres)), sres))
+        isTRUE(identical(as(mres, class(sres)), sres)) ||
+        (identical(length(sres), length(mres)) &&
+           (!is.recursive(sres) && ! is.recursive(mres)) &&
+           isTRUE(all(sres == mres)))
 
       list(pass, ifelse(pass, "", feedback))
       },
       error = function(e){
+        dbg("\nUID: ", bid, "\nError encountered: ", e)
+        dbg("\nsres: ", typeof(sres), "\n", sres)
+        dbg("\nmres: ", typeof(mres), "\n", mres)
         list(FALSE, feedback)
       }
     )
@@ -122,7 +127,6 @@ process_student_auto <- function(bid, rmds, auto_fun, auto_rub_fun, allowed_fun,
   flist <- all_functions
 
   make_argstring <- function(f) {
-
     frml <- formals(f, my)
     fnames <- names(frml)
     fvals <- sapply(frml, format)
@@ -208,7 +212,8 @@ grade_functions <- function(function_rubric,
                             bids,
                             rmds,
                             allowed_fun,
-                            check_formals){
+                            check_formals,
+                            debug = FALSE){
   me <- knitr::purl(sol_file)
   my <- new.env()
   did_source_teacher <- source(me, my)
@@ -226,7 +231,8 @@ grade_functions <- function(function_rubric,
                          auto_rub_fun = auto_rub_fun,
                          allowed_fun = allowed_fun,
                          my = my,
-                         check_formals = check_formals)
+                         check_formals = check_formals,
+                         debug = debug)
   auto_fun_res <- Reduce("rbind", raw_auto_fun)
   attr(auto_fun_res, "groups") <- NULL
   as_tibble(auto_fun_res)
