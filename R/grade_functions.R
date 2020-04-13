@@ -118,7 +118,7 @@ process_student_auto <- function(bid, rmds, auto_fun, auto_rub_fun, allowed_fun,
         if (exists("mres")) {
           dbg("\nmres: ", typeof(mres), "\n", mres)
         }
-        list(FALSE, feedback)
+        list(FALSE, "There was an error.")
       }
     )
   },  f = fcalls, a = fargs))
