@@ -1,3 +1,9 @@
+dbg <- function(...) {
+  if (parent.frame(7)$debug) {
+    message(...)
+  }
+}
+
 sort_attr <- function(x) {
   ax <- attributes(x)
   if (!is.null(ax)) {
