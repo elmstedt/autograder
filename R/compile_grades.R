@@ -27,13 +27,15 @@ compile_grades <- function(reader_file = "grader.csv",
 ) {
   message("Reading in rubric files...")
   rubric <- suppressMessages(read_csv(rubric_file,
-                                      col_types = cols(subpart = col_character())))
+                                      col_types = cols(.default = "c")))
   auto_fun <- suppressMessages(read_csv(function_rubric_file,
-                                        col_types = cols(subpart = col_character())))
+                                        col_types = cols(.default = "c")))
 
   # fix auto_fun with automatic feedback.
-  allowed_fun <- suppressMessages(read_csv(allowed_functions_file))
-  grader <- suppressMessages(read_csv(reader_file))
+  allowed_fun <- suppressMessages(read_csv(allowed_functions_file,
+                                           col_types = cols(.default = "c")))
+  grader <- suppressMessages(read_csv(reader_file,
+                                      col_types = cols(.default = "c")))
 
   auto_rub_fun <- rubric[rubric$type == "auto_fun", ]
   message("Copying support files...")
@@ -63,7 +65,8 @@ compile_grades <- function(reader_file = "grader.csv",
 
   # auto_regex <- read_csv("rubric_auto_regex.csv")
   message("Grading student answers...")
-  regex_rub <- suppressMessages(read_csv(regex_rubric_file))
+  regex_rub <- suppressMessages(read_csv(regex_rubric_file,
+                                         col_types = cols(.default = "c")))
   if (nrow(regex_rub) > 0) {
     graded_regex <- grade_regex(regex_rubric_file, bids)
   } else {
@@ -149,7 +152,7 @@ compile_grades <- function(reader_file = "grader.csv",
     `[[`(., 2) %>%
     max ->
     tot_pos
-
+  # res[, "possible"] <- as.character(res[, "possible"])
   # make feedback body
   res %>%
     group_by(bid) %>%
