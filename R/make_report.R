@@ -23,6 +23,7 @@ make_data_row <- function(a) {
   b <- a
   o <- order(b$question, b$part, b$subpart, b$possible, na.last = TRUE) #order the data so the questions and parts are in order and put the quibbles last.
   b <- b[o,]
+  b$possible <- as.character(b$possible)
   duplicated_parts <- duplicated(b[c("question", "part")])
   if(any(duplicated_parts)){
     b[duplicated_parts, ]$part <- NA
@@ -31,7 +32,9 @@ make_data_row <- function(a) {
     b[duplicated(b$question), ]$question <- NA
   }
   # b[is.na(b)] <- "&#8942;"
-  b[is.na(b)] <- ""
+  if (any(is.na(b))) {
+    b[is.na(b)] <- ""
+  }
   # b[b == ""] <- "&#8942;"
 
   fmt <- "<tr>

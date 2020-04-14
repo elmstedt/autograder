@@ -164,7 +164,7 @@ process_student_auto <- function(bid, rmds, auto_fun, auto_rub_fun, allowed_fun,
 
 this_student %>%
     group_by(question, part, subpart) %>%
-    summarise(bid = bid,  score = mean(res) * mean(points), possible = mean(points), fb = paste(ifelse(res, "", feedback), sep = "<br/>", collapse = "<br/>")) ->
+    summarise(bid = bid,  score = mean(as.numeric(res)) * mean(as.numeric(points)), possible = mean(as.numeric(points)), fb = paste(ifelse(res, "", feedback), sep = "<br/>", collapse = "<br/>")) ->
     student_res
   student_res$fb <- gsub("^(&nbsp;)?( ?<br/>)*|(<br/>&nbsp;)?(<br/>)*?$", "", student_res$fb)
 
@@ -223,10 +223,10 @@ grade_functions <- function(function_rubric,
   did_source_teacher <- source(me, my)
   # message(did_source_teacher)
   rubric <- suppressMessages(read_csv(rubric_file,
-                                      col_types = cols(subpart = col_character())))
+                                      col_types = cols(.default = "c")))
   auto_rub_fun <- rubric[rubric$type == "auto_fun", ]
   auto_fun <- suppressMessages(read_csv(function_rubric,
-                                        col_types = cols(subpart = col_character())))
+                                        col_types = cols(.default = "c")))
 
   raw_auto_fun <- pblapply(bids, process_student_auto,
                          # bids = bids,
