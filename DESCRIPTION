@@ -1,7 +1,7 @@
 Package: autograder
 Type: Package
 Title: Autograding functions for UCLA Stats 20
-Version: 0.99.4.1
+Version: 0.99.5
 Author: Jake Elmstedt
 Maintainer: Jake Elmstedt <jake.elmstedt@gmail.com>
 Description: Useful for automatically grading student submissions in Stats 20.

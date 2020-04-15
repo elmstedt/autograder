@@ -113,7 +113,7 @@ compile_grades <- function(reader_file = "grader.csv",
   }
 
   grader <- suppressMessages(inner_join(grader,
-                       rubric[rubric$type == "reader",
+                       rubric[rubric$type == "grader",
                               c("question", "part", "subpart", "points")]))
   grader$possible <- grader$points
   # reorder grader columns to match other files
@@ -141,13 +141,13 @@ compile_grades <- function(reader_file = "grader.csv",
   # make grade data frame containing bid and raw score
   res %>%
     group_by(bid) %>%
-    summarise(grade = sum(score)) ->
+    summarise(grade = sum(as.numeric(score))) ->
     df_grade
 
   # get total possible points
   res %>%
     group_by(bid) %>%
-    summarise(pos = sum(possible)) %>%
+    summarise(pos = sum(as.numeric(possible))) %>%
     `[[`(., 2) %>%
     max ->
     tot_pos

@@ -191,6 +191,7 @@ this_student %>%
                            paste("Function should be written without loops.<br/>",
                                  student_res$fb,
                                  sep = ifelse(student_res$fb == "", "", "<br/>")))
+  student_res$fb <- gsub("^(<br/>)+", "", student_res$fb)
   did_remove_student <- file.remove(stdr)
   rm(student)
   student_res[c("bid", "question", "part", "subpart", "possible", "score", "fb")]
