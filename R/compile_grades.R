@@ -114,8 +114,7 @@ compile_grades <- function(reader_file = "grader.csv",
 
   grader <- suppressMessages(inner_join(grader,
                        rubric[rubric$type == "reader",
-                              c("question", "part", "subpart", "points")],
-                       by = "bid"))
+                              c("question", "part", "subpart", "points")]))
   grader$possible <- grader$points
   # reorder grader columns to match other files
   grader <- grader[names(auto_res)]
