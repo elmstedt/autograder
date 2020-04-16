@@ -1,7 +1,1 @@
-"fun","bad_fun","bad_max","any_req_fun","any_max","all_req_fun","all_max","only_allowed_fun","only_max","loops_allowed","loop_max"
-"reading_ease",,"0",,"0",,"0",,"0","FALSE","0.75"
-"my_nchar","nchar","0",,"0",,"0",,"0","FALSE","0.75"
-"my_strrep","strrep","0",,"0",,"0",,"0","FALSE","0.85"
-"%is_in%","%in%, match","0",,"0",,"0",,"0","FALSE","0.75"
-"my_gregexpr","regexpr, gregexpr","0",,"0",,"0",,"0","FALSE","0.75"
-"pargsub",,"0",,"0",,"0",,"0","FALSE","0.75"
+fun,bad_fun,bad_max,any_req_fun,any_max,all_req_fun,all_max,only_allowed_fun,only_max,ifs_allowed,if_max,loops_allowed,loop_max

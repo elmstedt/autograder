@@ -13,7 +13,8 @@
 #' @export
 #'
 #' @examples
-compile_grades <- function(reader_file = "grader.csv",
+compile_grades <- function(submission_dir = "subs",
+                           reader_file = "grader.csv",
                            results_file = "grades.csv",
                            rubric_file = "rubric.csv",
                            regex_rubric_file = "rubric_auto_regex.csv",
@@ -32,15 +33,14 @@ compile_grades <- function(reader_file = "grader.csv",
                                         col_types = cols(.default = "c")))
 
   # fix auto_fun with automatic feedback.
-  allowed_fun <- suppressMessages(read_csv(allowed_functions_file,
-                                           col_types = cols(.default = "c")))
+  allowed_fun <- suppressMessages(read_csv(allowed_functions_file))
   grader <- suppressMessages(read_csv(reader_file,
                                       col_types = cols(.default = "c")))
 
   auto_rub_fun <- rubric[rubric$type == "auto_fun", ]
   message("Copying support files...")
   suppressWarnings(file.copy(support_dir, getwd(), recursive = TRUE))
-  rmds <- dir("subs", pattern = "Rmd$", recursive = TRUE, ignore.case = TRUE, full.names = TRUE)
+  rmds <- dir(submission_dir, pattern = "Rmd$", recursive = TRUE, ignore.case = TRUE, full.names = TRUE)
   bids <- get_bid(rmds)
 
   # only grade currently enrolled students

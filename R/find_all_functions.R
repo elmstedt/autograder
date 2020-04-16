@@ -13,7 +13,7 @@ find_all_functions <- function(hw_dir, exclude = NULL, flist = NULL, combine = F
   rmds <- dir(hw_dir, pattern = "Rmd$", full.names = TRUE, recursive = TRUE, ignore.case = TRUE)
   bid <- bids[1]
   process_one <- function(bid, exclude, flist){
-    message(bid)
+    # message(bid)
     get_student_functions <- function(f, envir = globalenv()) {
       sf <- tryCatch(get(f, envir = envir),
                      error = function(e){
@@ -56,18 +56,41 @@ find_all_functions <- function(hw_dir, exclude = NULL, flist = NULL, combine = F
   }
   # exclude <- NULL
   # flist <- NULL
-  res <- sapply(bids, process_one, exclude = exclude, flist = flist)
+  res <- pblapply(bids, process_one, exclude = exclude, flist = flist)
   # out <- sort(table(Reduce("c", res)))
 
-
   if (combine) {
-    table(Reduce(`c`,apply(res, 2, function(r) {
+    # finds how many students used each function internally.
+    table(Reduce(`c`, lapply(res, function(r) {
       unique(Reduce(`c`, r))
     })))
   } else {
-    apply(res, 1, function(r){
-      table(Reduce(`c`, sapply(r, unique)))
-    })
+    # finds how many students used each function internally in each function.
+    all_funs <- unique(Reduce(`c`, lapply(res, names)))
+    conformed <- bind_rows(lapply(res, function(x) {
+      whereami <- parent.frame()$i
+      tryCatch({
+        x <- lapply(x, unique)
+        lens <- sapply(x, length)
+        n <- max(lens)
+        x <- mapply(`c`, x, lapply(n - lens, character),SIMPLIFY = FALSE)
+        to_add <- setdiff(all_funs, names(x))
+        ta <- rep(list(character(n)), length(to_add))
+        names(ta) <- to_add
+        w <- bind_cols(as_tibble(x), as_tibble(ta))
+        w %>%
+          pivot_longer(
+            cols = names(w),
+            names_to = "student_function",
+            values_to = "used_function") -> q
+        q[q[, "used_function", drop = TRUE] != "",]
+      }, error = function(e){
+        message(e, "\n", length(x), "\n", whereami)
+      })
+    }))
+    conformed %>%
+      group_by(student_function, used_function) %>%
+      summarise(n = n())
   }
 }
 

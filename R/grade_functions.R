@@ -66,17 +66,20 @@ process_student_auto <- function(bid, rmds, auto_fun, auto_rub_fun, allowed_fun,
   # bad_funs <- names(bad_funs[!is.na(bad_funs)])
   # check if any functions use banned loops
   illegal_loops <- mapply(get_illegal_loops,
-         all_functions,
-         allowed_fun[match(all_functions, allowed_fun$fun),]$loops_allowed,
-         MoreArgs = list(envir = student)
+                          all_functions,
+                          allowed_fun[match(all_functions, allowed_fun$fun),]$loops_allowed,
+                          MoreArgs = list(envir = student)
   )
   bad_loops <- sapply(illegal_loops, function(q){ifelse(length(q) == 0, 1, allowed_fun$loop_max)})
-  # bad_loops <- names(bad_loops[!is.na(bad_loops)])
-  # no_credit <- union(bad_funs, bad_loops)
-
-  # illegal_loops
-  # i <- 1
-  # check if functions return the correct value
+  
+  illegal_conditionals <- mapply(get_illegal_conditionals,
+                          all_functions,
+                          allowed_fun[match(all_functions, allowed_fun$fun),]$ifs_allowed,
+                          MoreArgs = list(envir = student)
+  )
+  bad_ifs <- sapply(illegal_conditionals,
+                    function(q){ifelse(length(q) == 0, 1, allowed_fun$if_max)})
+  
   qdo.call <- purrr::quietly(do.call)
   function_results <- t(mapply(function(f, a){
     tryCatch({
@@ -175,8 +178,11 @@ this_student %>%
 
   # TODO: change score to be a proportion of
   # available points from rubric (need to add points to both auto and regex rubrics)
-  student_res$score <- ceiling(student_res$score * args_score$score * bad_funs * bad_loops * 10) / 10
-  # student_res$possible <- student_res$possible
+  student_res$score <- ceiling(student_res$score *
+                                 args_score$score *
+                                 bad_funs *
+                                 pmin(bad_ifs, bad_loops)
+                               * 10) / 10
   student_res$fb <- ifelse(args_score$fb == "",
                            student_res$fb,
                            paste(student_res$fb, args_score$fb,
@@ -186,6 +192,12 @@ this_student %>%
                            paste("Function used disallowed functions.<br/>",
                                  student_res$fb,
                                  sep = ifelse(student_res$fb == "", "", "<br/>")))
+  student_res$fb <- ifelse(bad_ifs == 1,
+                           student_res$fb,
+                           paste("Function should be written without conditionals.<br/>",
+                                 student_res$fb,
+                                 sep = ifelse(student_res$fb == "", "", "<br/>")))
+  
   student_res$fb <- ifelse(bad_loops == 1,
                            student_res$fb,
                            paste("Function should be written without loops.<br/>",
