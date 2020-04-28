@@ -10,7 +10,15 @@
 #' @export
 #'
 #' @examples
-process_student_auto <- function(bid, rmds, auto_fun, auto_rub_fun, allowed_fun, my, check_formals = FALSE, debug = FALSE) {
+process_student_auto <- function(bid,
+                                 rmds,
+                                 auto_fun,
+                                 auto_rub_fun,
+                                 allowed_fun,
+                                 my,
+                                 check_formals = FALSE,
+                                 chapter_level = 0,
+                                 debug = FALSE) {
   # message(bid)
   this_student <- suppressMessages(inner_join(auto_fun, auto_rub_fun))
   rmd <- rmds[grepl(bid, rmds)]
@@ -45,7 +53,7 @@ process_student_auto <- function(bid, rmds, auto_fun, auto_rub_fun, allowed_fun,
   student_objs <- lapply(ls(envir = student), get, envir = student)
   student_obj_classes <- sapply(student_objs, class)
   student_obj_names <- ls(envir = student)
-
+  
   student_functions <- student_objs[student_obj_classes == "function"]
   names(student_functions) <- student_obj_names[student_obj_classes == "function"]
 
@@ -53,16 +61,33 @@ process_student_auto <- function(bid, rmds, auto_fun, auto_rub_fun, allowed_fun,
   # check missing functions
   missing_functions <- setdiff(all_functions, ls(student))
   found_functions <- intersect(names(student_functions), allowed_fun$fun)
-
+  
+  #check_whitelist
+  whitelist <- unique(c(whitelist[whitelist[, "ch"] <= chapter_level, "fun"],
+                     names(student_functions),
+                     all_functions))
+  for (i in 1:3) {
+    # check for recursive violations 3 deep should be sufficient for Stats 20.
+    whitelist_violations <- lapply(names(student_functions),
+                                   check_whitelist,
+                                   whitelist,
+                                   student)
+    zeros <- sapply(whitelist_violations, function(x)length(x) == 0)
+    names(zeros) <- names(student_functions)
+    whitelist <- setdiff(whitelist, names(zeros[!zeros]))
+  }
+  zeros <- unlist(zeros)
   # check if any functions have illegal functions
   illegal_functions <- mapply(get_illegal_functions,
          allowed_fun$fun,
          allowed_fun$bad_fun,
          MoreArgs = list(envir = student)
   )
+  
   # illegal_functions$my_rev <- c("rev", "seq")
   bad_funs <- sapply(illegal_functions, function(q){ifelse(length(q) == 0, 1, allowed_fun$bad_max)})
-
+  zeros[setdiff(names(bad_funs), names(zeros))] <- 1
+  bad_funs <- bad_funs * zeros[names(bad_funs)]
   # bad_funs <- names(bad_funs[!is.na(bad_funs)])
   # check if any functions use banned loops
   illegal_loops <- mapply(get_illegal_loops,
@@ -230,6 +255,7 @@ grade_functions <- function(function_rubric,
                             rmds,
                             allowed_fun,
                             check_formals,
+                            chapter_level = 0,
                             debug = FALSE){
   me <- knitr::purl(sol_file)
   my <- new.env()
@@ -249,6 +275,7 @@ grade_functions <- function(function_rubric,
                          allowed_fun = allowed_fun,
                          my = my,
                          check_formals = check_formals,
+                         chapter_level = chapter_level,
                          debug = debug)
   auto_fun_res <- Reduce("rbind", raw_auto_fun)
   attr(auto_fun_res, "groups") <- NULL
