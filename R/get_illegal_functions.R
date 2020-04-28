@@ -33,6 +33,34 @@ get_illegal_functions <- function(f, bad_fun = character(0), envir = globalenv()
 
 #' Title
 #'
+#' @param f 
+#' @param whitelist 
+#' @param envir 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+check_whitelist <- function(f, whitelist, envir = globalenv()) {
+  sf <- tryCatch(get(f, envir = envir),
+                 error = function(e){
+                   NULL
+                 })
+  if (is.null(sf)){
+    integer(0)
+  } else {
+    bod <- body(sf)
+    temp <- tempfile()
+    writeLines(c("f <- function(){", as.character(bod)[-1], "}"), temp)
+    # loops <- c("FOR", "WHILE", "REPEAT")
+    fcall <- "SYMBOL_FUNCTION_CALL"
+    pc <- lintr::get_source_expressions(temp)$expressions[[1]]$parsed_content
+    setdiff(pc[pc$token %in% fcall, ]$text, whitelist)
+  }
+}
+
+#' Title
+#'
 #' @param f
 #' @param loops_allowed
 #' @param envir

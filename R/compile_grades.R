@@ -24,6 +24,7 @@ compile_grades <- function(submission_dir = "subs",
                            allowed_functions_file = "allowed_functions.csv",
                            grade_style = TRUE,
                            check_formals = FALSE,
+                           chapter_level = 0,
                            debug = FALSE
 ) {
   message("Reading in rubric files...")
@@ -40,7 +41,7 @@ compile_grades <- function(submission_dir = "subs",
   auto_rub_fun <- rubric[rubric$type == "auto_fun", ]
   message("Copying support files...")
   suppressWarnings(file.copy(support_dir, getwd(), recursive = TRUE))
-  rmds <- dir(submission_dir, pattern = "Rmd$", recursive = TRUE, ignore.case = TRUE, full.names = TRUE)
+  rmds <- dir(submission_dir, pattern = "Rmd$|rmd$", recursive = TRUE, ignore.case = TRUE, full.names = TRUE)
   bids <- get_bid(rmds)
 
   # only grade currently enrolled students
@@ -58,6 +59,7 @@ compile_grades <- function(submission_dir = "subs",
                                 rmds = rmds,
                                 allowed_fun = allowed_fun,
                                 check_formals = check_formals,
+                                chapter_level = chapter_level,
                                 debug = debug)
 
   # message("Average homework grade", mean(graded_fun$score))
