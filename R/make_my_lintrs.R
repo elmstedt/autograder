@@ -8,7 +8,7 @@ is_infix <- function(x) {
   grepl("^`%.+%`$", x)
 }
 
-absolute_path_linter <- function(source_file, lax = TRUE) {
+absolute_path_linter2 <- function(source_file, lax = TRUE) {
   lapply(ids_with_token(source_file, "STR_CONST"), function(id) {
     token <- with_id(source_file, id)
     path <- do.call("file.path",
@@ -64,7 +64,7 @@ my_unneeded_concatenation_linter <- function(source_file) {
 }
 
 
-object_name_linter <- function(styles = "snake_case") {
+object_name_linter2 <- function(styles = "snake_case") {
   .or_string <- function(xs) {
     len <- length(xs)
     if (len <= 1) {
@@ -183,7 +183,7 @@ make_my_lintrs <- function(){
   new_lintrs <- setdiff(all_lintrs, names(lintr::default_linters))
   extra_lints <- sapply(c(new_lintrs[c(1, 8:11)]), function(l) get(l))
   my_lintrs <- do.call("with_defaults", args = extra_lints)
-  my_lintrs[["object_name_linter"]] <- object_name_linter(styles = "snake_case")
+  my_lintrs[["object_name_linter"]] <- object_name_linter2(styles = "snake_case")
   my_lintrs[["cyclocomp_linter"]] <- NULL
   # my_lintrs[["cyclocomp_linter"]] <- cyclocomp_linter(complexity_limit = 10)
   my_lintrs[["no_tab_linter"]] <- NULL

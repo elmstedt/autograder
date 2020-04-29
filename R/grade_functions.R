@@ -18,15 +18,18 @@ process_student_auto <- function(bid,
                                  my,
                                  check_formals = FALSE,
                                  chapter_level = 0,
+                                 max_runtime = 3,
                                  debug = FALSE) {
   # message(bid)
+  dbg("UID: ", bid)
   this_student <- suppressMessages(inner_join(auto_fun, auto_rub_fun))
   rmd <- rmds[grepl(bid, rmds)]
   stdr <- suppressMessages(knitr::purl(rmd, quiet = TRUE, documentation = 0))
   # deprint student functions
   writeLines(gsub(pattern = "print\\(", replacement = "invisible\\(", readLines(stdr)), stdr)
   student <- new.env()
-
+  # copy support files
+  
   # check if file can source
   did_source_student <- (suppressWarnings(suppressMessages(robust_source(stdr, student, 0.1))))
   if (!did_source_student) {
@@ -43,9 +46,9 @@ process_student_auto <- function(bid,
   fargs <- auto_fun$arguments
 
   all_functions <- unique(fcalls)
-  fcalls <- gsub("\\w+::", "", fcalls)
-  to_copy <- which(str_detect(all_functions, "::"))
-  all_functions <- gsub("\\w+::", "", all_functions)
+  fcalls <- gsub("\\w+::+", "", fcalls)
+  to_copy <- which(str_detect(all_functions, "::+"))
+  all_functions <- gsub("\\w+::+", "", all_functions)
   for (tc in to_copy) {
     assign(all_functions[tc], get(all_functions[tc]), envir = student)
     assign(all_functions[tc], get(all_functions[tc]), envir = my)
@@ -106,49 +109,74 @@ process_student_auto <- function(bid,
                     function(q){ifelse(length(q) == 0, 1, allowed_fun$if_max)})
   
   qdo.call <- purrr::quietly(do.call)
-  function_results <- t(mapply(function(f, a){
-    tryCatch({
-      expected_out <- ""
-      if (f == "identity") {
-        b <- deparse(get(a, envir = my))
-        a <- deparse(get(a, envir = student))
-      } else {
-        b <- a
+  
+  check_function <- function(f, a, my, student) {
+    assign(".Traceback", NULL, "package:base")
+    on.exit({
+      msg <- capture.output(traceback())
+      if (!identical(msg, "No traceback available ")) {
+        dbg(paste(msg, "\n"))
       }
-      sarglist <- paste0("list(", a, ")")
-      marglist <- paste0("list(", b, ")")
-
-      mres <- qdo.call(f, eval(rlang::parse_expr(marglist)), envir = my)[["result"]]
-      expected_out <- paste("<code>", paste(capture.output(mres), collapse = "<br/>"), "</code>")
-      expected_out <- gsub(" ", "&nbsp;", expected_out)
+    })
+    expected_out <- ""
+    if (f %in% c("identity")) {
+      b <- deparse(get(a, envir = my))
+      a <- deparse(get(a, envir = student))
+    } else {
+      b <- a
+    }
+    sarglist <- paste0("list(", a, ")")
+    marglist <- paste0("list(", b, ")")
+    # dbg(format(f))
+    mres <- qdo.call(f, eval(rlang::parse_expr(marglist), envir = my), envir = my)[["result"]]
+    expected_out <- paste("<code>", paste(capture.output(mres), collapse = "<br/>"), "</code>")
+    expected_out <- gsub(" ", "&nbsp;", expected_out)
+    if (f %in% c("identity", "anything_equal")) {
+      feedback <- paste("The must exist an object with value: <code>", a, ")</code><br/>&nbsp;<br/>", sep = "")
+    } else {
       feedback <- paste("<code>", f, "(", a, ")</code> must return:<br/>", expected_out, "<br/>&nbsp;<br/>", sep = "")
-      sres <- R.utils::withTimeout(qdo.call(f, eval(rlang::parse_expr(sarglist)), envir = student)[["result"]], timeout = 3)
-      if (is.numeric(sres)) {
-        sres <- round(sres, 6)
-      }
-      if (is.numeric(mres)) {
-        mres <- round(mres, 6)
-      }
-      pass <- close_enough(mres, sres, 1e-6) ||
-        isTRUE(identical(sres, mres)) ||
-        isTRUE(identical(as(mres, class(sres)), sres)) ||
-        (identical(length(sres), length(mres)) &&
-           (!is.recursive(sres) && ! is.recursive(mres)) &&
-           isTRUE(all(sres == mres)))
-
-      list(pass, ifelse(pass, "", feedback))
-      },
-      error = function(e){
-        dbg("\nUID: ", bid, "\nError encountered: ", e)
-        if (exists("sres")) {
-          dbg("\nsres: ", typeof(sres), "\n", sres)
-        }
-        if (exists("mres")) {
-          dbg("\nmres: ", typeof(mres), "\n", mres)
-        }
-        list(FALSE, "")
-      }
-    )
+    }
+    sres <- R.utils::withTimeout(qdo.call(f, eval(rlang::parse_expr(sarglist), envir = student), envir = student)[["result"]], timeout = max_runtime)
+    if (is.numeric(sres)) {
+      sres <- round(sres, 6)
+    }
+    if (is.numeric(mres)) {
+      mres <- round(mres, 6)
+    }
+    pass <- check_pass(mres, sres, 1e-6)
+    
+    list(pass, ifelse(pass, "", feedback))
+  }
+  
+  function_results <- t(mapply(function(f, a){
+    here <- environment()
+    e <- evaluate::try_capture_stack(quote(check_function(f, a, my, student)),
+                                     here)
+    if ("error" %in% class(e)) {
+      errs <- lapply(e, format)
+      dbg(errs$message)
+      dbg(paste(errs$calls, collapse = "\n"))
+      list(FALSE, "")
+    } else {
+      e
+    }
+    # tryCatch({
+    #   
+    #   },
+    # error = function(e){
+    #   # TODO: Add feedback for timeout error.
+    #   # TODO: enable per function max_runtime. e.g.
+    #   #       max_runtime is a numeric value or a named vector.
+    #   dbg("Error encountered: ", e)
+    #   if (exists("sres")) {
+    #     dbg("\nsres: ", typeof(sres), "\n", sres)
+    #   }
+    #   if (exists("mres")) {
+    #     dbg("\nmres: ", typeof(mres), "\n", mres)
+    #   }
+      
+    # }
+    # )
   },  f = fcalls, a = fargs))
   dimnames(function_results) <- NULL
   function_results <- tibble::as_tibble(plyr::alply(function_results, .margins = 2, unlist))
@@ -256,10 +284,17 @@ grade_functions <- function(function_rubric,
                             allowed_fun,
                             check_formals,
                             chapter_level = 0,
+                            max_runtime = 3,
                             debug = FALSE){
+  dbg("In grade functions")
   me <- knitr::purl(sol_file)
   my <- new.env()
-  did_source_teacher <- source(me, my)
+  did_source_teacher <- robust_source(me, my)
+  if (!isTRUE(did_source_teacher)) {
+    stop("Failed to source solutions.")
+  }
+  dbg("did_source_teacher: ", did_source_teacher)
+  
   # message(did_source_teacher)
   rubric <- suppressMessages(read_csv(rubric_file,
                                       col_types = cols(.default = "c")))
@@ -276,6 +311,7 @@ grade_functions <- function(function_rubric,
                          my = my,
                          check_formals = check_formals,
                          chapter_level = chapter_level,
+                         max_runtime = max_runtime,
                          debug = debug)
   auto_fun_res <- Reduce("rbind", raw_auto_fun)
   attr(auto_fun_res, "groups") <- NULL

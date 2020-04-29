@@ -25,8 +25,8 @@ compile_grades <- function(submission_dir = "subs",
                            grade_style = TRUE,
                            check_formals = FALSE,
                            chapter_level = 0,
-                           debug = FALSE
-) {
+                           max_runtime = 3,
+                           debug = FALSE) {
   message("Reading in rubric files...")
   rubric <- suppressMessages(read_csv(rubric_file,
                                       col_types = cols(.default = "c")))
@@ -40,7 +40,8 @@ compile_grades <- function(submission_dir = "subs",
 
   auto_rub_fun <- rubric[rubric$type == "auto_fun", ]
   message("Copying support files...")
-  suppressWarnings(file.copy(support_dir, getwd(), recursive = TRUE))
+  support_files <- dir(support_dir, full.names = TRUE)
+  suppressWarnings(file.copy(support_files, getwd(), recursive = TRUE))
   rmds <- dir(submission_dir, pattern = "Rmd$|rmd$", recursive = TRUE, ignore.case = TRUE, full.names = TRUE)
   bids <- get_bid(rmds)
 
@@ -48,7 +49,7 @@ compile_grades <- function(submission_dir = "subs",
   # message("Getting current students from roster...")
   # students <- get_current_students(roster_file)
   # bids <- intersect(bids, students)
-
+  # readline("Press enter to continue...")
   # grade functions
   message("Grading student functions...")
 
@@ -60,6 +61,7 @@ compile_grades <- function(submission_dir = "subs",
                                 allowed_fun = allowed_fun,
                                 check_formals = check_formals,
                                 chapter_level = chapter_level,
+                                max_runtime = max_runtime,
                                 debug = debug)
 
   # message("Average homework grade", mean(graded_fun$score))
@@ -178,6 +180,7 @@ compile_grades <- function(submission_dir = "subs",
               feedback = paste(grading_table, style_table))
   grading_results$feedback <- gsub(pattern = "(<br/>)+", replacement = "<br/>", grading_results$feedback)
   write_csv(grading_results, results_file)
+  unlink(support_files)
   message("Finished grading. The grading results are in the file:\n", normalizePath(file.path(".", results_file)))
   grading_results
 }

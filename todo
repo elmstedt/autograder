@@ -1,0 +1,16 @@
+TODO:
+
+
+Do I want to grade regex for each student concurrent with grading functions?
+Pro: can get their specific object names, allows for more precise regex target
+     can give more specific feedback rather than there/not there.
+Con: may be slower, requires rewrite.
+
+
+Use explicit namespaces for all external functions.
+
+
+Allow user to pass custom whitelist / blacklist.
+
+
+Evaluate whitelist / blacklist before running functions to save time.
