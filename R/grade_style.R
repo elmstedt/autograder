@@ -1,5 +1,7 @@
+#' @importFrom base merge
+#' @importFrom lintr lint
 grade_style <- function(rmd, my_lintrs, class_lintrs) {
-  lints <- lint(rmd, linters = my_lintrs)
+  lints <- lintr::lint(rmd, linters = my_lintrs)
   ldf <- as.data.frame(lints)
   linter_names <- ldf$linter
   linter_names[!grepl(pattern = "_linter", x = linter_names)] <- paste0(linter_names[!grepl(pattern = "_linter", x = linter_names)], "_linter")
@@ -20,6 +22,8 @@ grade_style <- function(rmd, my_lintrs, class_lintrs) {
 #' @export
 #'
 #' @examples
+#' @importFrom dplyr tibble
+#' @importFrom knitr purl
 grade_all_style <- function(bid, rmds, my_lintrs, stats20_lintrs) {
   # message(bid)
   rmd <- rmds[grepl(bid, rmds)]
@@ -31,10 +35,10 @@ grade_all_style <- function(bid, rmds, my_lintrs, stats20_lintrs) {
       style <- cbind(family = "All", style)
     }
     style_score <- sum(as.numeric(style$score), na.rm = TRUE)
-    tibble(bid = bid, style_score = style_score, style_table = make_table(style))},
+    dplyr::tibble(bid = bid, style_score = style_score, style_table = make_table(style))},
     error = function(e) {
-      style_error <- tibble(family = "Parsing Error", score = -100, message = as.character(e), where = "Unknown.")
-      tibble(bid = bid, style_score = -100, style_table = make_table(style_error))
+      style_error <- dplyr::tibble(family = "Parsing Error", score = -100, message = as.character(e), where = "Unknown.")
+      dplyr::tibble(bid = bid, style_score = -100, style_table = make_table(style_error))
     }
   )
 }

@@ -7,6 +7,7 @@
 #' @export
 #'
 #' @examples
+#' @importFrom utils str
 get_whitelist <- function(ch = 0) {
   # # package_obs <- Reduce(`c`, sapply(search()[-1], objects))
   # # avail_fun <- package_obs[sapply(package_obs, function(x){is.function(get(x))})]
@@ -36,7 +37,7 @@ get_whitelist <- function(ch = 0) {
   # load("R/sysdata.rda")
   whitelist$fun <- as.character(whitelist$fun)
   whitelist$ch <- as.integer(whitelist$ch)
-  str(whitelist)
+  utils::str(whitelist)
   save(whitelist, file = "R/sysdata.rda")
   # # write.csv(df,file = "whitelist.csv", row.names = FALSE)
   # course_functions <- list(ch1, ch2)

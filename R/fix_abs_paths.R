@@ -7,15 +7,18 @@
 #' @export
 #'
 #' @examples
+#' @importFrom readr read_lines
+#' @importFrom stringr str_detect str_split str_extract_all
+#' @importFrom utils tail
 fix_abs_path <- function(rmd, support_dir) {
-  lines <- read_lines(rmd)
+  lines <- readr::read_lines(rmd)
   load_lines <- grepl(pattern = "load\\(.*\\)", lines)
   to_load <- lines[load_lines]
   for (i in seq_along(to_load)) {
-    if (str_detect(to_load[i], "/")) {
-      str_split(str_extract_all(to_load[i], "(?<=load\\((\"|')).*(?=(\"|'))"), "/") %>%
+    if (stringr::str_detect(to_load[i], "/")) {
+      stringr::str_split(stringr::str_extract_all(to_load[i], "(?<=load\\((\"|')).*(?=(\"|'))"), "/") %>%
         unlist() %>%
-        tail(1) ->
+        utils::tail(1) ->
         this_load
       to_load[i] <- paste0("load(\"", this_load, "\")")
     }

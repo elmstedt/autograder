@@ -11,6 +11,7 @@
 #' @export
 #'
 #' @examples
+#' @importFrom stringr str_trim
 make_styled_submissions <- function(sub_dir, new_sub_dir = file.path(sub_dir, "../", "styled_subs")) {
     if (!dir.exists(new_sub_dir)) {
       dir.create(new_sub_dir)
@@ -22,7 +23,7 @@ make_styled_submissions <- function(sub_dir, new_sub_dir = file.path(sub_dir, ".
                full.names = TRUE,
                pattern = "Rmd",
                ignore.case = TRUE)
-    lines <- str_trim(readLines(rmd)) %>% unlist()
+    lines <- stringr::str_trim(readLines(rmd)) %>% unlist()
 
     lines <- gsub("``` ?\\{r", "```\\{r", lines)
     lines <- gsub("``(`[\\w ])", "\\1", lines)

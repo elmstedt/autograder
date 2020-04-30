@@ -9,6 +9,8 @@
 #' @export
 #'
 #' @examples
+#' @importFrom readr read_lines
+#' @importFrom stringr str_extract_all
 fix_headings <- function(sub_dir) {
   rmds <- dir(file.path(sub_dir), full.names = TRUE, pattern = "Rmd", ignore.case = TRUE, recursive = TRUE)
   for (rmd in rmds){
@@ -45,7 +47,7 @@ fix_headings <- function(sub_dir) {
     }
 
     writeLines(lines, rmd)
-    lines <- read_lines(rmd)
+    lines <- readr::read_lines(rmd)
     for (i in rev(seq_along(lines))) {
       if (lines[i] == "" && lines[i - 1] == "") {
         lines <- lines[-i]

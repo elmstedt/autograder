@@ -6,9 +6,10 @@
 #' @export
 #'
 #' @examples
+#' @importFrom stringr str_extract_all str_trim
 get_bid <- function(r){
   suppressWarnings(r %>%
-                     str_extract_all("\\d{9}(?=\\/)") %>%
+                     stringr::str_extract_all("\\d{9}(?=\\/)") %>%
                      unlist() %>%
-                     str_trim())
+                     stringr::str_trim())
 }

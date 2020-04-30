@@ -13,6 +13,15 @@
 #' @export
 #'
 #' @examples
+#' @importFrom dplyr tibble group_by summarise ungroup inner_join do
+#' @importFrom pbapply pblapply
+#' @importFrom readr read_csv write_csv
+#' @importFrom dplyr tibble group_by summarise ungroup inner_join do
+#' @importFrom pbapply pblapply
+#' @importFrom readr read_csv write_csv
+#' @importFrom dplyr tibble group_by summarise ungroup inner_join do
+#' @importFrom pbapply pblapply
+#' @importFrom readr read_csv write_csv
 compile_grades <- function(submission_dir = "subs",
                            reader_file = "grader.csv",
                            results_file = "grades.csv",
@@ -28,14 +37,14 @@ compile_grades <- function(submission_dir = "subs",
                            max_runtime = 3,
                            debug = FALSE) {
   message("Reading in rubric files...")
-  rubric <- suppressMessages(read_csv(rubric_file,
+  rubric <- suppressMessages(readr::read_csv(rubric_file,
                                       col_types = cols(.default = "c")))
-  auto_fun <- suppressMessages(read_csv(function_rubric_file,
+  auto_fun <- suppressMessages(readr::read_csv(function_rubric_file,
                                         col_types = cols(.default = "c")))
 
   # fix auto_fun with automatic feedback.
-  allowed_fun <- suppressMessages(read_csv(allowed_functions_file))
-  grader <- suppressMessages(read_csv(reader_file,
+  allowed_fun <- suppressMessages(readr::read_csv(allowed_functions_file))
+  grader <- suppressMessages(readr::read_csv(reader_file,
                                       col_types = cols(.default = "c")))
 
   auto_rub_fun <- rubric[rubric$type == "auto_fun", ]
@@ -69,7 +78,7 @@ compile_grades <- function(submission_dir = "subs",
 
   # auto_regex <- read_csv("rubric_auto_regex.csv")
   message("Grading student answers...")
-  regex_rub <- suppressMessages(read_csv(regex_rubric_file,
+  regex_rub <- suppressMessages(readr::read_csv(regex_rubric_file,
                                          col_types = cols(.default = "c")))
   if (nrow(regex_rub) > 0) {
     graded_regex <- grade_regex(regex_rubric_file, bids)
@@ -80,19 +89,19 @@ compile_grades <- function(submission_dir = "subs",
   # grade style
   if (!isFALSE(grade_style)) {
     message("Grading student style...")
-    style_grades <- pblapply(bids, grade_all_style, rmds, make_my_lintrs(), make_stats_20_lintrs())
+    style_grades <- pbapply::pblapply(bids, grade_all_style, rmds, make_my_lintrs(), make_stats_20_lintrs())
     style_grades <- Reduce("rbind", style_grades)
   } else {
-    style_grades <- tibble(bid = bids, style_score = 0, style_table = "")
+    style_grades <- dplyr::tibble(bid = bids, style_score = 0, style_table = "")
   }
 
   message("Compiling grade file...")
   # combine function and regex grades
   auto_raw <- rbind(graded_fun, graded_regex)
   auto_raw %>%
-    group_by(bid, question, part, subpart) %>%
-    summarise(possible = sum(possible), score = sum(score), feedback = paste0(fb, collapse = "<br/>")) %>%
-    ungroup() ->
+    dplyr::group_by(bid, question, part, subpart) %>%
+    dplyr::summarise(possible = sum(possible), score = sum(score), feedback = paste0(fb, collapse = "<br/>")) %>%
+    dplyr::ungroup() ->
     auto_res
   auto_res$score <- round(auto_res$score, 1)
 
@@ -116,7 +125,7 @@ compile_grades <- function(submission_dir = "subs",
     grader$subpart <- NA_character_
   }
 
-  grader <- suppressMessages(inner_join(grader,
+  grader <- suppressMessages(dplyr::inner_join(grader,
                        rubric[rubric$type == "grader",
                               c("question", "part", "subpart", "points")]))
   grader$possible <- grader$points
@@ -144,22 +153,22 @@ compile_grades <- function(submission_dir = "subs",
 
   # make grade data frame containing bid and raw score
   res %>%
-    group_by(bid) %>%
-    summarise(grade = sum(as.numeric(score))) ->
+    dplyr::group_by(bid) %>%
+    dplyr::summarise(grade = sum(as.numeric(score))) ->
     df_grade
 
   # get total possible points
   res %>%
-    group_by(bid) %>%
-    summarise(pos = sum(as.numeric(possible))) %>%
+    dplyr::group_by(bid) %>%
+    dplyr::summarise(pos = sum(as.numeric(possible))) %>%
     `[[`(., 2) %>%
     max ->
     tot_pos
   # res[, "possible"] <- as.character(res[, "possible"])
   # make feedback body
   res %>%
-    group_by(bid) %>%
-    do(make_data_row(.)) ->
+    dplyr::group_by(bid) %>%
+    dplyr::do(make_data_row(.)) ->
     feedback_body
 
 
@@ -171,15 +180,15 @@ compile_grades <- function(submission_dir = "subs",
   style_grades$style_table <- gsub("\\n", "<br/>", style_grades$style_table)
 
   # todo: include late penalty calculation
-  grading_results <- inner_join(df_grade, style_grades, by = "bid")
+  grading_results <- dplyr::inner_join(df_grade, style_grades, by = "bid")
   grading_results <- grading_results %>%
-    group_by(bid) %>%
-    summarise(grade = scoring_function(grade) + ifelse(identical(grade_style, 0),
+    dplyr::group_by(bid) %>%
+    dplyr::summarise(grade = scoring_function(grade) + ifelse(identical(grade_style, 0),
                                                        0,
                                                        style_score),
               feedback = paste(grading_table, style_table))
   grading_results$feedback <- gsub(pattern = "(<br/>)+", replacement = "<br/>", grading_results$feedback)
-  write_csv(grading_results, results_file)
+  readr::write_csv(grading_results, results_file)
   unlink(support_files)
   message("Finished grading. The grading results are in the file:\n", normalizePath(file.path(".", results_file)))
   grading_results
