@@ -22,6 +22,9 @@
 #' @importFrom dplyr tibble group_by summarise ungroup inner_join do
 #' @importFrom pbapply pblapply
 #' @importFrom readr read_csv write_csv
+#' @importFrom dplyr tibble group_by summarise ungroup inner_join do
+#' @importFrom pbapply pblapply
+#' @importFrom readr read_csv cols write_csv
 compile_grades <- function(submission_dir = "subs",
                            reader_file = "grader.csv",
                            results_file = "grades.csv",
@@ -38,14 +41,14 @@ compile_grades <- function(submission_dir = "subs",
                            debug = FALSE) {
   message("Reading in rubric files...")
   rubric <- suppressMessages(readr::read_csv(rubric_file,
-                                      col_types = cols(.default = "c")))
+                                      col_types = readr::cols(.default = "c")))
   auto_fun <- suppressMessages(readr::read_csv(function_rubric_file,
-                                        col_types = cols(.default = "c")))
+                                        col_types = readr::cols(.default = "c")))
 
   # fix auto_fun with automatic feedback.
   allowed_fun <- suppressMessages(readr::read_csv(allowed_functions_file))
   grader <- suppressMessages(readr::read_csv(reader_file,
-                                      col_types = cols(.default = "c")))
+                                      col_types = readr::cols(.default = "c")))
 
   auto_rub_fun <- rubric[rubric$type == "auto_fun", ]
   message("Copying support files...")
@@ -79,7 +82,7 @@ compile_grades <- function(submission_dir = "subs",
   # auto_regex <- read_csv("rubric_auto_regex.csv")
   message("Grading student answers...")
   regex_rub <- suppressMessages(readr::read_csv(regex_rubric_file,
-                                         col_types = cols(.default = "c")))
+                                         col_types = readr::cols(.default = "c")))
   if (nrow(regex_rub) > 0) {
     graded_regex <- grade_regex(regex_rubric_file, bids)
   } else {
