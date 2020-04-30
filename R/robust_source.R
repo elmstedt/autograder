@@ -8,10 +8,12 @@
 #' @export
 #'
 #' @examples
+#' @importFrom purrr quietly
+#' @importFrom R.utils parse withTimeout
 robust_source <- function(file, local = parent.frame(), to = 10) {
   qeval <- purrr::quietly(eval)
   tryCatch({
-    ll <- parse(file)
+    ll <- R.utils::parse(file)
     ll <- ll[!grepl("\\bsetwd\\(", ll)]
     for (i in seq_along(ll)) {
       tryCatch(R.utils::withTimeout(qeval(ll[[i]], envir = local)[["results"]], timeout = to),

@@ -8,6 +8,16 @@
 #' @export
 #'
 #' @examples
+#' @importFrom dplyr bind_rows bind_cols as_tibble group_by summarise n
+#' @importFrom knitr purl
+#' @importFrom lintr get_source_expressions
+#' @importFrom pbapply pblapply
+#' @importFrom tidyr pivot_longer
+#' @importFrom dplyr bind_rows bind_cols as_tibble group_by summarise n
+#' @importFrom knitr purl
+#' @importFrom lintr get_source_expressions
+#' @importFrom pbapply pblapply
+#' @importFrom tidyr pivot_longer
 find_all_functions <- function(hw_dir, exclude = NULL, flist = NULL, combine = FALSE, support_dir = "support_files") {
   bids <- dir(hw_dir, include.dirs = TRUE)
   rmds <- dir(hw_dir, pattern = "Rmd$|rmd$", full.names = TRUE, recursive = TRUE, ignore.case = TRUE)
@@ -54,7 +64,7 @@ find_all_functions <- function(hw_dir, exclude = NULL, flist = NULL, combine = F
     names(b) <- flist
     b
   }
-  res <- pblapply(bids, process_one, exclude = exclude, flist = flist)
+  res <- pbapply::pblapply(bids, process_one, exclude = exclude, flist = flist)
   if (combine) {
     # finds how many students used each function internally.
     table(Reduce(`c`, lapply(res, function(r) {
@@ -63,7 +73,7 @@ find_all_functions <- function(hw_dir, exclude = NULL, flist = NULL, combine = F
   } else {
     # finds how many students used each function internally in each function.
     all_funs <- unique(Reduce(`c`, lapply(res, names)))
-    conformed <- bind_rows(lapply(res, function(x) {
+    conformed <- dplyr::bind_rows(lapply(res, function(x) {
       whereami <- parent.frame()$i
       tryCatch({
         x <- lapply(x, unique)
@@ -73,9 +83,9 @@ find_all_functions <- function(hw_dir, exclude = NULL, flist = NULL, combine = F
         to_add <- setdiff(all_funs, names(x))
         ta <- rep(list(character(n)), length(to_add))
         names(ta) <- to_add
-        w <- bind_cols(as_tibble(x), as_tibble(ta))
+        w <- dplyr::bind_cols(dplyr::as_tibble(x), dplyr::as_tibble(ta))
         w %>%
-          pivot_longer(
+          tidyr::pivot_longer(
             cols = names(w),
             names_to = "student_function",
             values_to = "used_function") -> q
@@ -85,8 +95,8 @@ find_all_functions <- function(hw_dir, exclude = NULL, flist = NULL, combine = F
       })
     }))
     conformed %>%
-      group_by(student_function, used_function) %>%
-      summarise(n = n())
+      dplyr::group_by(student_function, used_function) %>%
+      dplyr::summarise(n = dplyr::n())
   }
 }
 

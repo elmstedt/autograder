@@ -7,6 +7,8 @@
 #' @export
 #'
 #' @examples
+#' @importFrom readr read_csv
+#' @importFrom rmarkdown render
 knit_submissions <- function(sub_dir, support_dir) {
   support_files <- dir(support_dir, full.names = TRUE)
   loads <- support_files[grepl("Rdata", support_files, ignore.case = TRUE)]

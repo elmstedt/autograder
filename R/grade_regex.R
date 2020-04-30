@@ -28,10 +28,13 @@ did_pass <- function(l, bids) {
 #' @export
 #'
 #' @examples
+#' @importFrom dplyr tibble group_by select filter summarise ungroup as_tibble inner_join
+#' @importFrom pbapply pblapply
+#' @importFrom readr read_csv cols col_character
 grade_regex <- function(regex_rubric, bids){
 # get rubric
-  auto_regex <- suppressMessages(read_csv(regex_rubric,
-                                          col_types = cols(subpart = col_character())))
+  auto_regex <- suppressMessages(readr::read_csv(regex_rubric,
+                                          col_types = readr::cols(subpart = readr::col_character())))
   # message(1)
 
   if (any(is.na(auto_regex$match))) {
@@ -50,7 +53,7 @@ grade_regex <- function(regex_rubric, bids){
   }
   # message(1)
   lapply(seq_along(bids), function(i){
-    ww <- cbind(tibble(bid = bids[i], passed = passed[i, ]), auto_regex)
+    ww <- cbind(dplyr::tibble(bid = bids[i], passed = passed[i, ]), auto_regex)
     names(ww) <- c("bid", "passed", names(auto_regex))
     ww
   }) ->
@@ -58,20 +61,20 @@ grade_regex <- function(regex_rubric, bids){
   auto_regex_raw <- Reduce("rbind", auto_regex_raw)
   # message(1)
   auto_regex_raw %>%
-    group_by(bid, question, part, subpart) %>%
-    select(bid, question, part, subpart, score, match, nomatch, passed) %>%
-    filter(score == max(score * passed) | !passed) %>%
-    summarise(score = max(score * passed), fb = paste0(ifelse(passed, match, nomatch), collapse = "<br/>")) %>%
-    ungroup() %>%
-    as_tibble() ->
+    dplyr::group_by(bid, question, part, subpart) %>%
+    dplyr::select(bid, question, part, subpart, score, match, nomatch, passed) %>%
+    dplyr::filter(score == max(score * passed) | !passed) %>%
+    dplyr::summarise(score = max(score * passed), fb = paste0(ifelse(passed, match, nomatch), collapse = "<br/>")) %>%
+    dplyr::ungroup() %>%
+    dplyr::as_tibble() ->
     auto_regex_res
 
   auto_regex %>%
-    group_by(question, part, subpart) %>%
-    summarise(possible = max(score)) ->
+    dplyr::group_by(question, part, subpart) %>%
+    dplyr::summarise(possible = max(score)) ->
     regex_possible
 
-  auto_regex_res <- suppressMessages(inner_join(auto_regex_res, regex_possible))
+  auto_regex_res <- suppressMessages(dplyr::inner_join(auto_regex_res, regex_possible))
   # must properly set names
   auto_regex_res
 }

@@ -6,6 +6,7 @@
 #' @export
 #'
 #' @examples
+#' @importFrom utils browseURL
 review_grading <- function(grades) {
   grade_lines <- apply(grades, 1, paste, collapse = "<br/>")
   tempDir <- tempfile()
@@ -14,5 +15,5 @@ review_grading <- function(grades) {
   writeLines(grade_lines,
              con = html_file,
              sep = "<br/><br/><hr><br/><br/>")
-  browseURL(html_file)
+  utils::browseURL(html_file)
 }

@@ -6,8 +6,10 @@
 #' @export
 #'
 #' @examples
+#' @importFrom rvest html_table html_nodes
+#' @importFrom xml2 read_html
 get_current_students <- function(filename) {
-  p <- html_table(html_nodes(read_html(filename), xpath = "//*/table"), fill = TRUE)[[1]]
+  p <- rvest::html_table(rvest::html_nodes(xml2::read_html(filename), xpath = "//*/table"), fill = TRUE)[[1]]
   bid <- p$`ID numberSort by ID number Ascending`
   na_idx <- is.na(bid)
   bid <- bid[!na_idx]

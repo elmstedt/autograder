@@ -19,6 +19,8 @@ scoring_function <- function(x, expr = scoring_expr){
 #' @export
 #'
 #' @examples
+#' @importFrom dplyr tibble
+#' @importFrom stringr str_remove_all
 make_data_row <- function(a) {
   b <- a
   o <- order(b$question, b$part, b$subpart, b$possible, na.last = TRUE) #order the data so the questions and parts are in order and put the quibbles last.
@@ -61,7 +63,7 @@ make_data_row <- function(a) {
   args <- c(str_replace_all(fmt, "\\t", ""), b[-1])
 
   d <- do.call(what = "sprintf", args = args)
-  tibble(feedback = paste0(str_remove_all(string = d, pattern = "\n|\t"), collapse = ""))
+  dplyr::tibble(feedback = paste0(stringr::str_remove_all(string = d, pattern = "\n|\t"), collapse = ""))
 }
 
 #' Title
@@ -72,11 +74,12 @@ make_data_row <- function(a) {
 #' @export
 #'
 #' @examples
+#' @importFrom stringr str_replace_all str_remove_all
 make_style_row <- function(a) {
   fmt <- "<tr><td align=\"left\" valign=\"top\" colspan=\"2\">%s</td><td align=\"right\" valign=\"top\">%s</td><td align=\"right\" valign=\"top\">%s</td><td valign=\"top\"><pre>%s</pre></td></tr>"
-  args <- c(str_replace_all(fmt, "[\\t\\n]", ""), a)
+  args <- c(stringr::str_replace_all(fmt, "[\\t\\n]", ""), a)
   d <- do.call(what = "sprintf", args = args)
-  paste0(str_remove_all(string = d, pattern = "\n|\t"), collapse = "")
+  paste0(stringr::str_remove_all(string = d, pattern = "\n|\t"), collapse = "")
   paste0(d, collapse = "")
 }
 

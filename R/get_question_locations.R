@@ -7,6 +7,9 @@
 #' @export
 #'
 #' @examples
+#' @importFrom dplyr tibble
+#' @importFrom stringr str_trim str_replace_all
+#' @importFrom utils head
 get_question_locations <- function(this_file, rubric) {
   if (any(grepl("<!DOCTYPE html>", this_file))) {
     type <- "html"
@@ -22,8 +25,8 @@ get_question_locations <- function(this_file, rubric) {
   if (type == "html") {
     question_pat <- paste0("<h(\\d)> *Que?stion ?#?", questions, ".*</h\\1>")
   } else {
-    this_file <- str_trim(str_replace_all(this_file, pattern = "## ?(Question ?#? ?\\d|\\(?[a-zA-Z]\\)?).*", replacement = "## \\1"))
-    this_file <- str_trim(str_replace_all(this_file, pattern = "^(\\([a-zA-Z]\\).*)", replacement = "### \\1"))
+    this_file <- stringr::str_trim(stringr::str_replace_all(this_file, pattern = "## ?(Question ?#? ?\\d|\\(?[a-zA-Z]\\)?).*", replacement = "## \\1"))
+    this_file <- stringr::str_trim(stringr::str_replace_all(this_file, pattern = "^(\\([a-zA-Z]\\).*)", replacement = "### \\1"))
 
     question_pat <- paste0("#+ *Question ?#? ?", questions)
   }
@@ -45,7 +48,7 @@ get_question_locations <- function(this_file, rubric) {
 
   q_ends <- c(q_starts[-1] - 1, length(this_file))
   names(q_ends) <- names(q_starts)
-  locs <- tibble(q = integer(0), p = character(0), start = integer(0), end = integer(0))
+  locs <- dplyr::tibble(q = integer(0), p = character(0), start = integer(0), end = integer(0))
   i <- 1
   for (i in seq_along(questions)) {
     q_parts <- unique(rubric[rubric$question == questions[i],]$part)
@@ -73,9 +76,9 @@ get_question_locations <- function(this_file, rubric) {
     p_ends <- p_ends[order(names(p_ends))]
     p_starts <- cummax(pmax(p_starts, q_starts[i]))
 
-    p_ends <- head(cummax(c(p_ends, q_ends[i])), -1)
+    p_ends <- utils::head(cummax(c(p_ends, q_ends[i])), -1)
 
-    locs <- rbind(locs, tibble(q = questions[i], p = c("", names(p_starts)), start = c(q_starts[i], p_starts), end = c(q_ends[i], p_ends)))
+    locs <- rbind(locs, dplyr::tibble(q = questions[i], p = c("", names(p_starts)), start = c(q_starts[i], p_starts), end = c(q_ends[i], p_ends)))
   }
 
   locs

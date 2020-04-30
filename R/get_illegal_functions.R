@@ -8,6 +8,7 @@
 #' @export
 #'
 #' @examples
+#' @importFrom lintr get_source_expressions
 get_illegal_functions <- function(f, bad_fun = character(0), envir = globalenv()) {
   sf <- tryCatch(get(f, envir = envir),
                  error = function(e){
@@ -41,6 +42,7 @@ get_illegal_functions <- function(f, bad_fun = character(0), envir = globalenv()
 #' @export
 #'
 #' @examples
+#' @importFrom lintr get_source_expressions
 check_whitelist <- function(f, whitelist, envir = globalenv()) {
   sf <- tryCatch(get(f, envir = envir),
                  error = function(e){
@@ -69,6 +71,7 @@ check_whitelist <- function(f, whitelist, envir = globalenv()) {
 #' @export
 #'
 #' @examples
+#' @importFrom lintr get_source_expressions
 get_illegal_loops <- function(f, loops_allowed, envir = globalenv()) {
   if (isFALSE(loops_allowed)){
     sf <- tryCatch(get(f, envir = envir),
@@ -100,6 +103,7 @@ get_illegal_loops <- function(f, loops_allowed, envir = globalenv()) {
 #' @export
 #'
 #' @examples
+#' @importFrom lintr get_source_expressions
 get_illegal_conditionals <- function(f, if_allowed, envir = globalenv()) {
   if (isFALSE(if_allowed)){
     sf <- tryCatch(get(f, envir = envir),
