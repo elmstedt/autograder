@@ -24,7 +24,7 @@ get_whitelist <- function(ch = 0) {
   ch4 <- c("stop", "warning", "message")
   ch5 <- c("matrix", "cbind", "rbind", "dim", "nrow", "ncol", "attributes",
            "list", "rownames", "colnames", "dimnames", "diag", "solve", "apply",
-           "rowMeans", "colMeans", "t", "row", "col", "cor", "order",)
+           "rowMeans", "colMeans", "t", "row", "col", "cor", "order")
   ch6 <- c("factor", "as.factor", "levels", "nlevels", "tapply")
   df <- as.data.frame(rbind(cbind(ch1, 1),
   cbind(ch2, 2),
@@ -37,11 +37,11 @@ get_whitelist <- function(ch = 0) {
   # load("R/sysdata.rda")
   whitelist$fun <- as.character(whitelist$fun)
   whitelist$ch <- as.integer(whitelist$ch)
-  utils::str(whitelist)
-  save(whitelist, file = "R/sysdata.rda")
+  # save(whitelist, file = "R/sysdata.rda")
   # # write.csv(df,file = "whitelist.csv", row.names = FALSE)
   # course_functions <- list(ch1, ch2)
   # Reduce(`c`, course_functions[seq_len(ch)])
+  whitelist[whitelist["ch"] <= ch, "fun"]
 }
 
 #' Title

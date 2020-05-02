@@ -31,6 +31,7 @@ compile_grades <- function(submission_dir = "subs",
                            rubric_file = "rubric.csv",
                            regex_rubric_file = "rubric_auto_regex.csv",
                            function_rubric_file = "rubric_auto_fun.csv",
+                           values_rubric_file = "rubric_auto_val.csv",
                            model_solution_file = "model_solutions.Rmd",
                            support_dir = "support_files",
                            allowed_functions_file = "allowed_functions.csv",
@@ -67,6 +68,7 @@ compile_grades <- function(submission_dir = "subs",
 
   graded_fun <- grade_functions(function_rubric = function_rubric_file,
                                 rubric_file = rubric_file,
+                                values_rubric = values_rubric_file,
                                 sol_file = model_solution_file,
                                 bids = bids,
                                 rmds = rmds,
@@ -78,16 +80,30 @@ compile_grades <- function(submission_dir = "subs",
 
   # message("Average homework grade", mean(graded_fun$score))
   # grade regex
-
+  View(graded_fun)
   # auto_regex <- read_csv("rubric_auto_regex.csv")
   message("Grading student answers...")
   regex_rub <- suppressMessages(readr::read_csv(regex_rubric_file,
-                                         col_types = readr::cols(.default = "c")))
+                                                col_types = readr::cols(.default = "c")))
   if (nrow(regex_rub) > 0) {
     graded_regex <- grade_regex(regex_rubric_file, bids)
   } else {
     graded_regex <- graded_fun[0,]
   }
+  
+  # val_rub <- suppressMessages(readr::read_csv(values_rubric_file,
+  #                                             col_types = readr::cols(.default = "c")))
+  # if (nrow(val_rub) > 0) {
+  #   graded_values <- grade_values(values_rubric = values_rubric_file,
+  #                                bids = bids,
+  #                                rmds = rmds,
+  #                                max_runtime = max_runtime,
+  #                                debug = debug)
+  # } else {
+  #   graded_values <- graded_fun[0,]
+  # }
+  
+  
 
   # grade style
   if (!isFALSE(grade_style)) {

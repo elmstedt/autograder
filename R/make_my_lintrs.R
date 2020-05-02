@@ -66,9 +66,7 @@ my_unneeded_concatenation_linter <- function(source_file) {
 }
 
 
-#' @importFrom R.utils capture
 #' @importFrom rex re_matches rex re_substitutes
-#' @importFrom sibling LEFT_ASSIGN EQ_ASSIGN RIGHT_ASSIGN
 #' @importFrom xml2 xml_find_all xml_find_first
 object_name_linter2 <- function(styles = "snake_case") {
   .or_string <- function(xs) {
@@ -99,16 +97,18 @@ object_name_linter2 <- function(styles = "snake_case") {
     conforming <- rex::re_matches(nms, style_regexes[[style]])
     conforming[!nzchar(nms) | is.na(conforming) | is_allowed(nms) | is_infix(nms)] <- TRUE
 
-    if (any(!conforming)) {
-      possible_s3 <- rex::re_matches(nms[!conforming], rex::rex(R.utils::capture(
-        name = "generic",
-        something
-      ), ".", R.utils::capture(name = "method", something)))
-      if (any(!is.na(possible_s3))) {
-        has_generic <- possible_s3$generic %in% generics
-        conforming[!conforming][has_generic] <- TRUE
-      }
-    }
+    # if (any(!conforming)) {
+    #   possible_s3 <- 
+    #     rex::re_matches(
+    #       nms[!conforming],
+    #       rex::rex(rex:::capture(name = "generic", something),
+    #                ".",
+    #                rex:::capture(name = "method", something)))
+    #   if (any(!is.na(possible_s3))) {
+    #     has_generic <- possible_s3$generic %in% generics
+    #     conforming[!conforming][has_generic] <- TRUE
+    #   }
+    # }
     conforming
   }
   # source_file <- "../2019_4_fall/stats20/homework/style_checker/file_uploads/test.R"
@@ -158,7 +158,10 @@ object_name_linter2 <- function(styles = "snake_case") {
 #' @export
 #'
 #' @examples
-#' @importFrom lintr default_linters default_undesirable_functions undesirable_function_linter
+#' @importFrom lintr with_defaults T_and_F_symbol_linter 
+#'   semicolon_terminator_linter undesirable_function_linter
+#'   undesirable_operator_linter unneeded_concatenation_linter default_linters
+#'   default_undesirable_functions
 make_my_lintrs <- function(){
   all_lintrs <- c(
     "T_and_F_symbol_linter", "assignment_linter",
@@ -180,15 +183,19 @@ make_my_lintrs <- function(){
   )
 
   extra_lints <- c(
-    "T_and_F_symbol_linter",
-    "semicolon_terminator_linter",
-    "undesirable_function_linter",
-    "undesirable_operator_linter",
-    "unneeded_concatenation_linter"
+    "lintr::T_and_F_symbol_linter",
+    "lintr::semicolon_terminator_linter",
+    "lintr::undesirable_function_linter",
+    "lintr::undesirable_operator_linter",
+    "lintr::unneeded_concatenation_linter"
   )
 
   new_lintrs <- setdiff(all_lintrs, names(lintr::default_linters))
-  extra_lints <- sapply(c(new_lintrs[c(1, 8:11)]), function(l) get(l))
+  new_lintrs <- paste0("lintr::", new_lintrs)
+  # library(lintr)
+  extra_lints <- sapply(c(new_lintrs[c(1, 8:11)]), function(l) eval(str2lang(l)))
+  names(extra_lints) <- gsub("lintr::", "", names(extra_lints))
+  # extra_lints <- sapply(c(new_lintrs[c(1, 8:11)]), function(l) get(l))
   my_lintrs <- do.call("with_defaults", args = extra_lints)
   my_lintrs[["object_name_linter"]] <- object_name_linter2(styles = "snake_case")
   my_lintrs[["cyclocomp_linter"]] <- NULL

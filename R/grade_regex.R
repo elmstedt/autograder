@@ -11,7 +11,7 @@
 process_student_regex <- function(pattern, auto_regex) {
   # message(pattern)
   ext <- auto_regex[auto_regex$regex == pattern, ]$ext
-  cmd <- paste0("grep -Przil --include=*.", ext, " '", pattern, "'")
+  cmd <- paste0("grep -Przil --include=*.", ext, " \"", pattern, "\"")
   a <- suppressWarnings(system(cmd, intern = TRUE))
   sort(get_bid(a))
 }

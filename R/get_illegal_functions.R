@@ -15,7 +15,7 @@ get_illegal_functions <- function(f, bad_fun = character(0), envir = globalenv()
                    NULL
                  })
   if (is.null(sf)){
-    integer(0)
+    character(0)
   } else {
     bod <- body(sf)
     temp <- tempfile()
@@ -43,14 +43,14 @@ get_illegal_functions <- function(f, bad_fun = character(0), envir = globalenv()
 #'
 #' @examples
 #' @importFrom lintr get_source_expressions
-check_whitelist <- function(f, whitelist, envir = globalenv()) {
-  sf <- tryCatch(get(f, envir = envir),
-                 error = function(e){
-                   NULL
-                 })
-  if (is.null(sf)){
-    integer(0)
-  } else {
+check_whitelist <- function(sf, whitelist, envir = globalenv()) {
+  # sf <- tryCatch(get(f, envir = envir),
+  #                error = function(e){
+  #                  NULL
+  #                })
+  # if (is.null(sf)){
+  #   integer(0)
+  # } else {
     bod <- body(sf)
     temp <- tempfile()
     writeLines(c("f <- function(){", as.character(bod)[-1], "}"), temp)
@@ -58,7 +58,7 @@ check_whitelist <- function(f, whitelist, envir = globalenv()) {
     fcall <- "SYMBOL_FUNCTION_CALL"
     pc <- lintr::get_source_expressions(temp)$expressions[[1]]$parsed_content
     setdiff(pc[pc$token %in% fcall, ]$text, whitelist)
-  }
+  # }
 }
 
 #' Title
