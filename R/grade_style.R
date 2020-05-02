@@ -1,4 +1,3 @@
-#' @importFrom base merge
 #' @importFrom lintr lint
 grade_style <- function(rmd, my_lintrs, class_lintrs) {
   lints <- lintr::lint(rmd, linters = my_lintrs)
@@ -7,7 +6,7 @@ grade_style <- function(rmd, my_lintrs, class_lintrs) {
   linter_names[!grepl(pattern = "_linter", x = linter_names)] <- paste0(linter_names[!grepl(pattern = "_linter", x = linter_names)], "_linter")
   ldf$linter <- linter_names
 
-  ldf <- base::merge(ldf, class_lintrs, all.x = TRUE, all.y = FALSE)
+  ldf <- merge(ldf, class_lintrs, all.x = TRUE, all.y = FALSE)
   process_lints(ldf)
 }
 

@@ -8,8 +8,8 @@ dbg <- function(...) {
     sink()
     closeAllConnections()
   } else {
-    print("failed debug")
-    stop(...)
+    # print("failed debug")
+    # stop(...)
   }
 }
 

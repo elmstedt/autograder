@@ -15,12 +15,50 @@ process_student_auto <- function(bid,
                                  auto_fun,
                                  auto_rub_fun,
                                  allowed_fun,
+                                 auto_val,
                                  my,
                                  check_formals = FALSE,
                                  chapter_level = 0,
                                  max_runtime = 3,
                                  debug = FALSE) {
-  # message(bid)
+  # TODO run correct code only once, not for every student, append
+  # to rubric the correct responses
+  
+  # TODO break into multiple submodules. Pattern should be:
+  # FOR each student
+  #   source student file
+  #   find all student functions
+  #   FOR each function in the rubric
+  #     IF student has same function
+  #       IF student function violates whitelist
+  #         award 0 points
+  #         next
+  #       ELSE
+  #         check args (0/1)?
+  #         IF loops and/or conditionals are used
+  #           score multiple applied
+  #         check presence of stop commands
+  #         FOR each test case
+  #           IF valid case
+  #             capture evaluation of student function
+  #             IF error
+  #               create feedback message
+  #           else
+  #             compare student result to expected result
+  #             IF student result is as expected
+  #               give full points
+  #             ELSE
+  #               give partial points
+  #               create feedback message
+  #   RETURN a data frame with:
+  #                 uid
+  #                 function name
+  #                 inputs
+  #                 input type: base, edge, error
+  #                 student output
+  #                 correct or not
+  
+  
   dbg("UID: ", bid)
   this_student <- suppressMessages(dplyr::inner_join(auto_fun, auto_rub_fun))
   rmd <- rmds[grepl(bid, rmds)]
@@ -53,12 +91,9 @@ process_student_auto <- function(bid,
     assign(all_functions[tc], get(all_functions[tc]), envir = student)
     assign(all_functions[tc], get(all_functions[tc]), envir = my)
   }
-  student_objs <- lapply(ls(envir = student), get, envir = student)
-  student_obj_classes <- sapply(student_objs, class)
-  student_obj_names <- ls(envir = student)
-  
+  student_objs <- sapply(ls(envir = student), get, envir = student)
+  student_obj_classes <- sapply(student_objs, class, USE.NAMES = TRUE)
   student_functions <- student_objs[student_obj_classes == "function"]
-  names(student_functions) <- student_obj_names[student_obj_classes == "function"]
 
 
   # check missing functions
@@ -71,7 +106,7 @@ process_student_auto <- function(bid,
                      all_functions))
   for (i in 1:3) {
     # check for recursive violations 3 deep should be sufficient for Stats 20.
-    whitelist_violations <- lapply(names(student_functions),
+    whitelist_violations <- lapply(student_functions,
                                    check_whitelist,
                                    whitelist,
                                    student)
@@ -79,8 +114,9 @@ process_student_auto <- function(bid,
     names(zeros) <- names(student_functions)
     whitelist <- setdiff(whitelist, names(zeros[!zeros]))
   }
+
   zeros <- unlist(zeros)
-  zeros["anything_equal"] <- TRUE
+  # zeros["anything_equal"] <- TRUE
   # check if any functions have illegal functions
   illegal_functions <- mapply(get_illegal_functions,
          allowed_fun$fun,
@@ -89,9 +125,16 @@ process_student_auto <- function(bid,
   )
   
   # illegal_functions$my_rev <- c("rev", "seq")
-  bad_funs <- sapply(illegal_functions, function(q){ifelse(length(q) == 0, 1, allowed_fun$bad_max)})
+  
+  # print(whitelist_violations)
+
+  # bad_funs <- sapply(illegal_functions, function(q){ifelse(length(q) == 0, 1, allowed_fun$bad_max)})
+  bad_funs <- ifelse(sapply(illegal_functions, length) == 0, 1, allowed_fun$bad_max)
+ 
   zeros[setdiff(names(bad_funs), names(zeros))] <- 1
   bad_funs <- bad_funs * zeros[names(bad_funs)]
+
+
   # bad_funs <- names(bad_funs[!is.na(bad_funs)])
   # check if any functions use banned loops
   illegal_loops <- mapply(get_illegal_loops,
@@ -140,53 +183,29 @@ process_student_auto <- function(bid,
     mres <- qdo.call(f, eval(rlang::parse_expr(marglist), envir = my), envir = my)[["result"]]
     expected_out <- paste("<code>", paste(utils::capture.output(mres), collapse = "<br/>"), "</code>")
     expected_out <- gsub(" ", "&nbsp;", expected_out)
-    if (f %in% c("identity", "anything_equal")) {
-      feedback <- paste("The must exist an object with value: <code>", a, ")</code><br/>&nbsp;<br/>", sep = "")
-    } else {
-      feedback <- paste("<code>", f, "(", a, ")</code> must return:<br/>", expected_out, "<br/>&nbsp;<br/>", sep = "")
-    }
-    sres <- R.utils::withTimeout(qdo.call(f, eval(rlang::parse_expr(sarglist), envir = student), envir = student)[["result"]], timeout = max_runtime)
+    feedback <- paste("<code>", f, "(", a, ")</code> must return:<br/>", expected_out, "<br/>&nbsp;<br/>", sep = "")
+    sres <- tryCatch({
+      R.utils::withTimeout(qdo.call(f, eval(rlang::parse_expr(sarglist), envir = student), envir = student)[["result"]], timeout = max_runtime)
+    }, error = function(e){
+      e
+    })
     if (is.numeric(sres)) {
       sres <- round(sres, 6)
     }
     if (is.numeric(mres)) {
       mres <- round(mres, 6)
     }
-    pass <- check_pass(mres, sres, 1e-6)
+    
+    pass <- check_val(mres, sres, 1e-6)
     
     list(pass, ifelse(pass, "", feedback))
   }
   
   function_results <- t(mapply(function(f, a){
-    here <- environment()
-    e <- evaluate::try_capture_stack(quote(check_function(f, a, my, student)),
-                                     here)
-    if ("error" %in% class(e)) {
-      errs <- lapply(e, format)
-      dbg(errs$message)
-      dbg(paste(errs$calls, collapse = "\n"))
-      list(FALSE, "")
-    } else {
-      e
-    }
-    # tryCatch({
-    #   
-    #   },
-    # error = function(e){
-    #   # TODO: Add feedback for timeout error.
-    #   # TODO: enable per function max_runtime. e.g.
-    #   #       max_runtime is a numeric value or a named vector.
-    #   dbg("Error encountered: ", e)
-    #   if (exists("sres")) {
-    #     dbg("\nsres: ", typeof(sres), "\n", sres)
-    #   }
-    #   if (exists("mres")) {
-    #     dbg("\nmres: ", typeof(mres), "\n", mres)
-    #   }
-      
-    # }
-    # )
-  },  f = fcalls, a = fargs))
+                                 check_function(f, a, my, student)},
+                               f = fcalls,
+                               a = fargs))
+  
   dimnames(function_results) <- NULL
   function_results <- dplyr::as_tibble(plyr::alply(function_results, .margins = 2, unlist))
   this_student[, c("res", "feedback")] <- function_results
@@ -204,25 +223,33 @@ process_student_auto <- function(bid,
   }
 
 
-  lapply(flist, function(f){
-    if (check_formals) {
-    test <- tryCatch(
-      {mean(c(identical(formals(f, student), formals(f, my)), identical(names(formals(f, student)), names(formals(f, my)))))},
-      error = function(e){
-        FALSE
-      }
-    )
+  if (check_formals) {
+    w <- lapply(flist, function(f){
+      score <- tryCatch({
+        1 - mean(c(
+          identical(formals(f, student), formals(f, my)),
+          identical(names(formals(f, student)), names(formals(f, my)))))
+        }, error = function(e){
+          1
+      })
+      data.frame(score = 1 - 0.1 * score,
+                 fb = ifelse(score > 0,
+                             paste0(
+                               "Function arguments should be the following, ",
+                               "in the following order, ",
+                               "with the following default values: ",
+                               make_argstring(f)),
+                             ""),
+                 stringsAsFactors = FALSE)
+      })
+    args_score <- Reduce("rbind", w)
     } else {
-      test <- 1
+      args_score <- data.frame(score = rep(1, length(flist)),
+                               fb = "",
+                               stringsAsFactors = FALSE)
     }
-    if (test) {
-      dplyr::tibble(score = ((1 + test) / 2)^(1 / 4), fb = ifelse(test < 1, paste0("Function arguments should be the following, in the following order, with the following default values: ", make_argstring(f)),""))
-    } else {
-      dplyr::tibble(score = 0.75, fb = paste0("Function arguments should be the following, in the following order, with the following default values: ", make_argstring(f)))
-    }
-  }) -> w
+    
 
-  args_score <- Reduce("rbind", w)
 
   # if formals are wrong no more than 1/2 credit
   #update_no_credit <- unique(this_student[this_student$fun %in% no_credit,c("question", "part")])
@@ -234,7 +261,9 @@ this_student %>%
   student_res$fb <- gsub("^(&nbsp;)?( ?<br/>)*|(<br/>&nbsp;)?(<br/>)*?$", "", student_res$fb)
 
   # Check body for banned functions
-
+  # View(this_student)
+  # View(student_res)
+  # stop()
 
   # if found function gets 0
 
@@ -245,15 +274,6 @@ this_student %>%
                                  bad_funs *
                                  pmin(bad_ifs, bad_loops)
                                * 10) / 10
-  student_res$fb <- ifelse(args_score$fb == "",
-                           student_res$fb,
-                           paste(student_res$fb, args_score$fb,
-                                 sep = ifelse(student_res$fb == "", "", "<br/>")))
-  student_res$fb <- ifelse(bad_funs == 1,
-                           student_res$fb,
-                           paste("Function used disallowed functions.<br/>",
-                                 student_res$fb,
-                                 sep = ifelse(student_res$fb == "", "", "<br/>")))
   student_res$fb <- ifelse(bad_ifs == 1,
                            student_res$fb,
                            paste("Function should be written without conditionals.<br/>",
@@ -265,11 +285,40 @@ this_student %>%
                            paste("Function should be written without loops.<br/>",
                                  student_res$fb,
                                  sep = ifelse(student_res$fb == "", "", "<br/>")))
+  student_res$fb <- ifelse(bad_funs == 1,
+                           student_res$fb,
+                           paste("Function used disallowed functions.<br/>",
+                                 student_res$fb,
+                                 sep = ifelse(student_res$fb == "", "", "<br/>")))
+  student_res$fb <- ifelse(args_score$fb == "",
+                           student_res$fb,
+                           paste(args_score$fb, student_res$fb,
+                                 sep = ifelse(student_res$fb == "", "", "<br/>")))
+  
   student_res$fb <- gsub("^(<br/>)+", "", student_res$fb)
+  # with(auto_val,
+  auto_val %>%
+    dplyr::group_by(object_name) %>%
+    # grade_value(my, student)
+    # dplyr::group_map(grade_value, list(my = my, student = student), keep = TRUE) ->
+    dplyr::group_map(grade_value, my = my, student = student, keep = TRUE) ->
+    val_results
+  
+  val_results <- dplyr::bind_rows(
+    val_results
+  )
+  
+  dplyr::bind_cols(
+    bid = rep(bid, nrow(auto_val)),
+    val_results) -> graded_values
+  student_res <- student_res[c("bid", "question", "part", "subpart", "possible", "score", "fb")]
+ 
+  out <- dplyr::bind_rows(
+    student_res,
+    graded_values)
   did_remove_student <- file.remove(stdr)
   rm(student)
-  student_res[c("bid", "question", "part", "subpart", "possible", "score", "fb")]
-  student_res
+  out
 }
 
 #' Title
@@ -287,6 +336,7 @@ this_student %>%
 #' @examples
 grade_functions <- function(function_rubric,
                             rubric_file,
+                            values_rubric,
                             sol_file,
                             bids,
                             rmds,
@@ -310,6 +360,8 @@ grade_functions <- function(function_rubric,
   auto_rub_fun <- rubric[rubric$type == "auto_fun", ]
   auto_fun <- suppressMessages(readr::read_csv(function_rubric,
                                         col_types = readr::cols(.default = "c")))
+  auto_val <- suppressMessages(readr::read_csv(values_rubric,
+                                        col_types = readr::cols(.default = "c")))
 
   raw_auto_fun <- pbapply::pblapply(bids, process_student_auto,
                          # bids = bids,
@@ -317,6 +369,7 @@ grade_functions <- function(function_rubric,
                          auto_fun = auto_fun,
                          auto_rub_fun = auto_rub_fun,
                          allowed_fun = allowed_fun,
+                         auto_val = auto_val,
                          my = my,
                          check_formals = check_formals,
                          chapter_level = chapter_level,
