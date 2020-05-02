@@ -80,6 +80,7 @@ compile_grades <- function(submission_dir = "subs",
 
   # message("Average homework grade", mean(graded_fun$score))
   # grade regex
+
   # auto_regex <- read_csv("rubric_auto_regex.csv")
   message("Grading student answers...")
   regex_rub <- suppressMessages(readr::read_csv(regex_rubric_file,
