@@ -49,9 +49,3 @@ grade_value <- function(val, group, my, student) {
   })
 }
 
-grade_values <- function(values_rubric,
-                         bids = bids,
-                         rmds = rmds,
-                         max_runtime = 3,
-                         debug = FALSE) {
-}
