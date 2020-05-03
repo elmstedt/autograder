@@ -10,6 +10,14 @@
 #' @export
 #'
 #' @examples
+#' @importFrom dplyr inner_join as_tibble group_by summarise group_map bind_rows bind_cols
+#' @importFrom knitr purl
+#' @importFrom plyr alply
+#' @importFrom purrr quietly
+#' @importFrom R.utils withTimeout
+#' @importFrom rlang parse_expr
+#' @importFrom stringr str_detect
+#' @importFrom utils capture.output
 process_student_auto <- function(bid,
                                  rmds,
                                  auto_fun,
@@ -315,6 +323,10 @@ this_student %>%
 #' @export
 #'
 #' @examples
+#' @importFrom dplyr as_tibble
+#' @importFrom knitr purl
+#' @importFrom pbapply pblapply
+#' @importFrom readr read_csv cols
 grade_functions <- function(function_rubric,
                             rubric_file,
                             values_rubric,

@@ -13,6 +13,7 @@ Imports:
   knitr,
   lintr,
   pbapply,
+  plyr,
   purrr,
   R.utils,
   readr,
