@@ -1,7 +1,7 @@
 #' Title
 #'
-#' @param ch 
-#' @param envir 
+#' @param ch
+#' @param envir
 #'
 #' @return
 #' @export
@@ -9,8 +9,6 @@
 #' @examples
 #' @importFrom utils str
 get_whitelist <- function(ch = 0) {
-  # # package_obs <- Reduce(`c`, sapply(search()[-1], objects))
-  # # avail_fun <- package_obs[sapply(package_obs, function(x){is.function(get(x))})]
   ch1 <- c("getwd", "setwd", "q", "rm", "sqrt", "exp", "log", "objects", "ls")
   ch2 <- c("c", "length", "mode", "seq", "seq_along", "seq_len", "rep", "numeric",
            "character", "logical", "integer", "vapply", "isTRUE", "isFALSE",
@@ -34,19 +32,14 @@ get_whitelist <- function(ch = 0) {
   cbind(ch6, 6)))
   names(df) <- c("fun", "ch")
   whitelist <- df
-  # load("R/sysdata.rda")
   whitelist$fun <- as.character(whitelist$fun)
   whitelist$ch <- as.integer(whitelist$ch)
-  # save(whitelist, file = "R/sysdata.rda")
-  # # write.csv(df,file = "whitelist.csv", row.names = FALSE)
-  # course_functions <- list(ch1, ch2)
-  # Reduce(`c`, course_functions[seq_len(ch)])
   whitelist[whitelist["ch"] <= ch, "fun"]
 }
 
 #' Title
 #'
-#' @param ch 
+#' @param ch
 #'
 #' @return
 #' @export

@@ -16,7 +16,9 @@ fix_abs_path <- function(rmd, support_dir) {
   to_load <- lines[load_lines]
   for (i in seq_along(to_load)) {
     if (stringr::str_detect(to_load[i], "/")) {
-      stringr::str_split(stringr::str_extract_all(to_load[i], "(?<=load\\((\"|')).*(?=(\"|'))"), "/") %>%
+      stringr::str_split(
+        stringr::str_extract_all(to_load[i],
+                                 "(?<=load\\((\"|')).*(?=(\"|'))"), "/") %>%
         unlist() %>%
         utils::tail(1) ->
         this_load
@@ -37,7 +39,11 @@ fix_abs_path <- function(rmd, support_dir) {
 #'
 #' @examples
 fix_abs_paths <- function(sub_dir, support_dir) {
-  rmds <- dir(sub_dir, recursive = TRUE, pattern = "Rmd", ignore.case = TRUE, full.names = TRUE)
+  rmds <- dir(sub_dir,
+              recursive = TRUE,
+              pattern = "Rmd",
+              ignore.case = TRUE,
+              full.names = TRUE)
   for (rmd in rmds) {
     fix_abs_path(rmd, support_dir)
   }

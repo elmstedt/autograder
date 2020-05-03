@@ -1,0 +1,3 @@
+question,part,subpart,object_name,possible,fix_mode,tol
+1,a,,idx*,1,TRUE,1.00E-06
+4,,,jerry,1,TRUE,1.00E-06

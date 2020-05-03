@@ -1,1 +1,5 @@
-"bid","question","part","subpart","score","feedback"
+bid,question,part,subpart,score,feedback
+123456789,3,,,1.5,Idea is not entirely correct. NA is NOT being compared to the value of 3 or 4 (in for all four expressions). Similar idea holds for 3rd equation.
+123456789,6,a,,1,
+123456789,6,b,,1,
+123456789,6,c,,1,

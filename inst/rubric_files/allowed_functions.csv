@@ -1,1 +1,10 @@
-fun,bad_fun,bad_max,any_req_fun,any_max,all_req_fun,all_max,only_allowed_fun,only_max,ifs_allowed,if_max,loops_allowed,loop_max
+fun,bad_fun,bad_max,any_req_fun,any_max,all_req_fun,all_max,only_allowed_fun,only_max,ifs_allowed,if_max,loops_allowed,loop_max,fix_mode,tol
+is_multiple,,0,,0,,0,,0,TRUE,1,FALSE,0,TRUE,0
+my_min,"min, max, sort, order, rank",0,,0,,0,,0,TRUE,1,TRUE,1,TRUE,1.00E-06
+my_ifelse,ifelse,0,,0,,0,,0,TRUE,1,FALSE,0.9,FALSE,0
+my_abs,abs,0,,0,,0,,0,TRUE,1,FALSE,0.9,FALSE,1.00E-06
+my_sign,sign,0,,0,,0,,0,TRUE,1,FALSE,0.9,FALSE,0
+merge,sort,0,,0,,0,,0,TRUE,1,TRUE,1,FALSE,0
+merge_sort,sort,0,,0,,0,,0,TRUE,1,FALSE,0,FALSE,0
+locate_motif,,0,,0,,0,,0,TRUE,1,TRUE,1,FALSE,0
+extract_longest_subsequence,,0,,0,,0,,0,TRUE,1,TRUE,1,FALSE,0

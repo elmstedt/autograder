@@ -1,5 +1,9 @@
 dbg <- function(...) {
-  if (any(vapply(1:20, function(i){isTRUE(parent.frame(i)$debug)}, logical(1)))) {
+  if (any(vapply(1:20,
+                 function(i) {
+                   isTRUE(parent.frame(i)$debug)
+                 },
+                 logical(1)))) {
     zz <- file("debug.log", open = "a+")
     sink(zz, append = TRUE)
     sink(zz, type = "message", append = TRUE)
@@ -7,9 +11,6 @@ dbg <- function(...) {
     sink(type = "message")
     sink()
     closeAllConnections()
-  } else {
-    # print("failed debug")
-    # stop(...)
   }
 }
 

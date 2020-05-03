@@ -24,7 +24,6 @@ grade_style <- function(rmd, my_lintrs, class_lintrs) {
 #' @importFrom dplyr tibble
 #' @importFrom knitr purl
 grade_all_style <- function(bid, rmds, my_lintrs, stats20_lintrs) {
-  # message(bid)
   rmd <- rmds[grepl(bid, rmds)]
   tryCatch({
     stdr <- suppressMessages(knitr::purl(rmd, quiet = TRUE, documentation = 0))

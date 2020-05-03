@@ -1,12 +1,25 @@
 Package: autograder
 Type: Package
 Title: Autograding Functions for UCLA Stats 20
-Version: 0.102.0
+Version: 0.110.0
 Author: Jake Elmstedt
 Maintainer: Jake Elmstedt <jake.elmstedt@gmail.com>
 Description: Useful for automatically grading student submissions in Stats 20.
 License: MIT
 Encoding: UTF-8
 LazyData: true
-Imports: R.utils, lintr, rex, rvest, tidyverse, stringr, readr, pbapply, purrr
+Imports:
+  dplyr,
+  knitr,
+  lintr,
+  pbapply,
+  purrr,
+  R.utils,
+  readr,
+  rex,
+  rmarkdown,
+  rvest,
+  stringr,
+  tidyr,
+  xml2
 RoxygenNote: 7.1.0

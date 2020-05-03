@@ -16,9 +16,9 @@ make_html_snippet <- function(html_file, start, end, html_open, html_close) {
   this_html <- suppressWarnings(readLines(html_file))
   open <- suppressWarnings(readLines(html_open))
   close <- suppressWarnings(readLines(html_close))
-  tempDir <- tempfile()
-  dir.create(tempDir)
-  html <- file.path(tempDir, "student_snippet.html")
+  temp_dir <- tempfile()
+  dir.create(temp_dir)
+  html <- file.path(temp_dir, "student_snippet.html")
   writeLines(c(open, this_html[start:end], close), html)
   html
 }

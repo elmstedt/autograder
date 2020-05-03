@@ -45,4 +45,3 @@ make_stats_20_lintrs <- function() {
                              "Whtespace", "Undesirables", "Semicolon", "Undesirables", "Undesirables", "Undesirables")
   stats20_lintrs
 }
-
