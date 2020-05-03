@@ -38,14 +38,14 @@ absolute_path_linter2 <- function(source_file, lax = TRUE) {
 }
 
 #' @importFrom lintr ids_with_token with_id Lint
-my_unneeded_concatenation_linter <- function(source_file) {
+my_unneeded_concat_linter <- function(source_file) {
   tokens <- source_file[["parsed_content"]] <- filter_out_token_type(source_file[["parsed_content"]],
                                                                      "expr")
   msg_empty <- "Unneded concatenation without arguments. Replace the \"c\" call by NULL."
   msg_const <- "Unneded concatenation of a constant. Remove the \"c\" call."
   lapply(lintr::ids_with_token(source_file, "SYMBOL_FUNCTION_CALL"),
          function(token_num) {
-           num_args <- get_num_concat_args(token_num, tokens)
+           num_args <- lintr:::get_num_concat_args(token_num, tokens)
            if (num_args == 0L || num_args == 1L) {
              token <- lintr::with_id(source_file, token_num)
              start_col_num <- token[["col1"]]
@@ -84,10 +84,6 @@ object_name_linter2 <- function(styles = "snake_case") {
     "^(?:\\.)?(?:[[:lower:][:digit:]])+$", "^(?:\\.)?(?:[[:upper:][:digit:]])+$"
   )
   names(style_regexes) <- c("CamelCase", "camelCase", "snake_case", "dotted.case", "lowercase", "UPPERCASE")
-  # print(styles)
-  # message(names(style_regexes))
-
-  # styles <- match.arg(styles, names(style_regexes), several.ok = TRUE)
   lint_msg <- paste0(
     "Variable and function name style should be ",
     .or_string(styles), "."
@@ -96,22 +92,8 @@ object_name_linter2 <- function(styles = "snake_case") {
   check_style <- function(nms, style, generics = character()) {
     conforming <- rex::re_matches(nms, style_regexes[[style]])
     conforming[!nzchar(nms) | is.na(conforming) | is_allowed(nms) | is_infix(nms)] <- TRUE
-
-    # if (any(!conforming)) {
-    #   possible_s3 <- 
-    #     rex::re_matches(
-    #       nms[!conforming],
-    #       rex::rex(rex:::capture(name = "generic", something),
-    #                ".",
-    #                rex:::capture(name = "method", something)))
-    #   if (any(!is.na(possible_s3))) {
-    #     has_generic <- possible_s3$generic %in% generics
-    #     conforming[!conforming][has_generic] <- TRUE
-    #   }
-    # }
     conforming
   }
-  # source_file <- "../2019_4_fall/stats20/homework/style_checker/file_uploads/test.R"
   function(source_file) {
     allowable <- c("na.rm", "na.last", "useNA",
                                 "MARGIN", "arr.ind", "as.factor", LETTERS, "`%^%`", "%^%")
@@ -125,12 +107,11 @@ object_name_linter2 <- function(styles = "snake_case") {
       " | ", "//SYMBOL_FORMALS"
     )
     assignments <- xml2::xml_find_all(x, xpath)
-    strip_names <- function (x) {
-      x <- rex::re_substitutes(x, rex::rex(start, some_of(".", quote, "$", "@")), "")
-      x <- rex::re_substitutes(x, rex::rex(some_of(quote, "<", "-", "$", "@"), end), "")
+    strip_names <- function(x) {
+      x <- rex::re_substitutes(x, rex::rex(start, rex:::some_of(".", quote, "$", "@")), "")
+      x <- rex::re_substitutes(x, rex::rex(rex:::some_of(quote, "<", "-", "$", "@"), end), "")
       x
     }
-    # nms <- lintr:::strip_names(as.character(xml2::xml_find_first(assignments, "./text()")))
     nms <- strip_names(as.character(xml2::xml_find_first(assignments, "./text()")))
 
 
@@ -158,11 +139,11 @@ object_name_linter2 <- function(styles = "snake_case") {
 #' @export
 #'
 #' @examples
-#' @importFrom lintr with_defaults T_and_F_symbol_linter 
+#' @importFrom lintr with_defaults T_and_F_symbol_linter
 #'   semicolon_terminator_linter undesirable_function_linter
 #'   undesirable_operator_linter unneeded_concatenation_linter default_linters
 #'   default_undesirable_functions
-make_my_lintrs <- function(){
+make_my_lintrs <- function() {
   all_lintrs <- c(
     "T_and_F_symbol_linter", "assignment_linter",
     "closed_curly_linter", "commas_linter",
@@ -192,32 +173,22 @@ make_my_lintrs <- function(){
 
   new_lintrs <- setdiff(all_lintrs, names(lintr::default_linters))
   new_lintrs <- paste0("lintr::", new_lintrs)
-  # library(lintr)
   extra_lints <- sapply(c(new_lintrs[c(1, 8:11)]), function(l) eval(str2lang(l)))
   names(extra_lints) <- gsub("lintr::", "", names(extra_lints))
-  # extra_lints <- sapply(c(new_lintrs[c(1, 8:11)]), function(l) get(l))
   my_lintrs <- do.call("with_defaults", args = extra_lints)
   my_lintrs[["object_name_linter"]] <- object_name_linter2(styles = "snake_case")
   my_lintrs[["cyclocomp_linter"]] <- NULL
-  # my_lintrs[["cyclocomp_linter"]] <- cyclocomp_linter(complexity_limit = 10)
   my_lintrs[["no_tab_linter"]] <- NULL
   my_lintrs[["pipe_continuation_linter"]] <- NULL
 
-  body(my_lintrs[["unneeded_concatenation_linter"]]) <- body(my_unneeded_concatenation_linter)
+  body(my_lintrs[["unneeded_concatenation_linter"]]) <- body(my_unneeded_concat_linter)
   undesireable_functions <- lintr::default_undesirable_functions
   undesireable_functions$print <- "use message() to output information to the console. print() should generally never be used to return a value."
   undesireable_functions$return <- "structure your code to return the last evaluated statement in the function body."
-  # undesireable_functions$library <- NULL
   undesireable_functions$ifelse <- NULL
   undesireable_functions$par <- NULL
-  # undesireable_functions$sapply <- NULL
-  # undesireable_functions$source <- NULL
   undesireable_functions$setwd <- "do not change the working directory in your R Markdown Files."
 
   my_lintrs[["undesirable_function_linter"]] <- lintr::undesirable_function_linter(fun = undesireable_functions)
-  # make outside functions lintr
-  #outside_functions <-
-  #my_lintrs[["outside_functions"]] <- undesirable_function_linter(fun = undesireable_functions)
   my_lintrs
 }
-

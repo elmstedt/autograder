@@ -3,7 +3,7 @@ grade_value <- function(val, group, my, student) {
   with(val, {
     possible <- as.numeric(possible)
     obj_name <- gsub("\\*", "", object_name)
-    check <- anything_equal(my[[obj_name]], student)
+    check <- anything_equal(my[[obj_name]], student, fix_mode, tol)
     expected_val <- paste("<code>",
                           paste(utils::capture.output(my[[obj_name]]),
                                 collapse = "<br/>"),
@@ -38,7 +38,7 @@ grade_value <- function(val, group, my, student) {
         sep = "")
       0
     }
-    
+
     dplyr::tibble(
       question,
       part,
@@ -55,4 +55,3 @@ grade_values <- function(values_rubric,
                          max_runtime = 3,
                          debug = FALSE) {
 }
-

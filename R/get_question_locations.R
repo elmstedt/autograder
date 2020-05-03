@@ -17,7 +17,11 @@ get_question_locations <- function(this_file, rubric) {
     type <- "rmd"
   }
   loc_start <- function(key, rubric, low = 1, high = length(this_file)) {
-    a <- which(grepl(key, this_file, ignore.case = TRUE) & seq_along(this_file) >= low & seq_along(this_file) <= high)
+    a <- which(grepl(key,
+                     this_file,
+                     ignore.case = TRUE) &
+                 seq_along(this_file) >= low &
+                 seq_along(this_file) <= high)
     max(a[as.integer(length(a) > 0)], low)
   }
   questions <- unique(rubric$question)
@@ -25,8 +29,14 @@ get_question_locations <- function(this_file, rubric) {
   if (type == "html") {
     question_pat <- paste0("<h(\\d)> *Que?stion ?#?", questions, ".*</h\\1>")
   } else {
-    this_file <- stringr::str_trim(stringr::str_replace_all(this_file, pattern = "## ?(Question ?#? ?\\d|\\(?[a-zA-Z]\\)?).*", replacement = "## \\1"))
-    this_file <- stringr::str_trim(stringr::str_replace_all(this_file, pattern = "^(\\([a-zA-Z]\\).*)", replacement = "### \\1"))
+    this_file <- stringr::str_trim(
+      stringr::str_replace_all(this_file,
+                               pattern = "## ?(Question ?#? ?\\d|\\(?[a-zA-Z]\\)?).*",
+                               replacement = "## \\1"))
+    this_file <- stringr::str_trim(
+      stringr::str_replace_all(this_file,
+                               pattern = "^(\\([a-zA-Z]\\).*)",
+                               replacement = "### \\1"))
 
     question_pat <- paste0("#+ *Question ?#? ?", questions)
   }
@@ -48,21 +58,26 @@ get_question_locations <- function(this_file, rubric) {
 
   q_ends <- c(q_starts[-1] - 1, length(this_file))
   names(q_ends) <- names(q_starts)
-  locs <- dplyr::tibble(q = integer(0), p = character(0), start = integer(0), end = integer(0))
+  locs <- dplyr::tibble(q = integer(0),
+                        p = character(0),
+                        start = integer(0),
+                        end = integer(0))
   i <- 1
   for (i in seq_along(questions)) {
-    q_parts <- unique(rubric[rubric$question == questions[i],]$part)
+    q_parts <- unique(rubric[rubric$question == questions[i], ]$part)
     if (type == "html") {
       part_pat <- paste0("<h(\\d)> *\\(?", q_parts, "\\)?.*</h\\1>")
     } else {
       part_pat <- paste0("^##+ *\\(?", q_parts, "\\)?$")
     }
-    p_starts <- unlist(sapply(part_pat, loc_start, low = q_starts[i], high = q_ends[i]))
+    p_starts <- unlist(sapply(part_pat,
+                              loc_start,
+                              low = q_starts[i],
+                              high = q_ends[i]))
 
     opts <- c(unique(p_starts), q_ends[i][length(p_starts) > 0]) - 1
     p_ends <- opts[apply(outer(p_starts - 1, opts, `<`), 1, which.max)]
 
-    # p_ends <- c(p_starts[-1] - 1, q_ends[i][length(p_starts) > 0])
     idx <- which(p_ends == 0)
     if (length(idx) > 0) {
       p_ends[idx] <- p_ends[idx + 1]
@@ -78,7 +93,10 @@ get_question_locations <- function(this_file, rubric) {
 
     p_ends <- utils::head(cummax(c(p_ends, q_ends[i])), -1)
 
-    locs <- rbind(locs, dplyr::tibble(q = questions[i], p = c("", names(p_starts)), start = c(q_starts[i], p_starts), end = c(q_ends[i], p_ends)))
+    locs <- rbind(locs, dplyr::tibble(q = questions[i],
+                                      p = c("", names(p_starts)),
+                                      start = c(q_starts[i], p_starts),
+                                      end = c(q_ends[i], p_ends)))
   }
 
   locs

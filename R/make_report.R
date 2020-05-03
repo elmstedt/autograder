@@ -7,7 +7,7 @@
 #' @export
 #'
 #' @examples
-scoring_function <- function(x, expr = scoring_expr){
+scoring_function <- function(x, expr = scoring_expr) {
   eval(as.expression(expr))
 }
 
@@ -24,20 +24,18 @@ scoring_function <- function(x, expr = scoring_expr){
 make_data_row <- function(a) {
   b <- a
   o <- order(b$question, b$part, b$subpart, b$possible, na.last = TRUE) #order the data so the questions and parts are in order and put the quibbles last.
-  b <- b[o,]
+  b <- b[o, ]
   b$possible <- as.character(b$possible)
   duplicated_parts <- duplicated(b[c("question", "part")])
-  if(any(duplicated_parts)){
+  if (any(duplicated_parts)) {
     b[duplicated_parts, ]$part <- NA
   }
   if (any(duplicated(b$question))) {
     b[duplicated(b$question), ]$question <- NA
   }
-  # b[is.na(b)] <- "&#8942;"
   if (any(is.na(b))) {
     b[is.na(b)] <- ""
   }
-  # b[b == ""] <- "&#8942;"
 
   fmt <- "<tr>
   <td align=\"left\" valign=\"top\">
@@ -222,7 +220,7 @@ make_total_row <- function(expr, a, r) {
     Total Score
   </th>
   <th align=\"right\"><b>",
-    100,#scoring_function(x = as.numeric(a)),
+    100,  scoring_function(x = as.numeric(a)),
     "</b></th>
   <th align=\"right\"><b>",
     scoring_function(x = as.numeric(r)),
